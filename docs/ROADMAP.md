@@ -4,8 +4,8 @@ The long-term target is a local-first personal AI companion with native language
 
 ## Delivery stages
 
-- [x] **v0.1 Foundation scaffold:** FastAPI, configurable model adapter, SQLite conversation history, configuration, schemas, and documentation. The scaffold exists; runtime and tests still need verification.
-- [ ] **v0.2 First boot and model-independent core:** run on HP 250 G7; verify tests; API starts without API credentials; deterministic fallback and clear no-model behavior.
+- [x] **v0.1 Foundation scaffold:** FastAPI, configurable model adapter, SQLite conversation history, configuration, schemas, and documentation.
+- [ ] **v0.2 First boot and model-independent core:** deterministic no-model fallback and API routing are implemented but not yet runtime-verified; next verify installation, tests, startup, and endpoints on HP 250 G7.
 - [ ] **v0.3 Durable memory:** user-approved facts, episodic memory, retrieval, provenance, correction, export/delete controls, and isolation tests.
 - [ ] **v0.4 Research and knowledge:** controlled web search/fetch, extraction, source tracking, freshness, deduplication, confidence, citations, and prompt-injection defenses.
 - [ ] **v0.5 Native NLP foundation:** language detection, tokenization experiments, intent/entity extraction, dialogue state, and measurable evaluation set.
@@ -27,4 +27,4 @@ The long-term target is a local-first personal AI companion with native language
 
 ## Immediate next milestone
 
-Prepare the HP 250 G7 as a lightweight development machine, clone the repository, install dependencies, run the API and smoke tests, then implement a model-independent startup/fallback path before adding more features.
+On the HP 250 G7: check Python and Git, clone the repository, create a virtual environment, install requirements, run `pytest -q`, start Uvicorn, and verify `/health`, `/chat`, and `/docs`. Record actual output before marking v0.2 verified.
