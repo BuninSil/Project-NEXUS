@@ -1,106 +1,82 @@
 # NEXUS SESSION STATE
 
-> Обновлять после каждой рабочей сессии. Это оперативная точка продолжения, а не полный список требований.
+> Оперативная точка продолжения. Обновлять после каждой рабочей сессии.
 
 ## Repository
 
 - Repository: https://github.com/BuninSil/Project-NEXUS
 - Default branch: `main`
-- Current documented stage: **v0.1 foundation scaffold**
+- Current stage: **v0.2 — model-independent core implemented, runtime unverified**
 - Product target: personal evolving AI companion; see `PROJECT_SPEC.md`.
 
-## Confirmed repository work
+## Implemented in GitHub
 
-The following files were previously created and then updated in GitHub:
-- `README.md`
-- `docs/ARCHITECTURE.md`
-- `docs/ROADMAP.md`
-- `docs/EVOLVING_INTELLIGENCE.md`
-- `docs/PROJECT_SPEC.md`
-- `docs/DEVELOPMENT_PLAYBOOK.md`
-- `docs/SESSION_STATE.md`
+- FastAPI application: `GET /health`, `POST /chat`, `GET /memory/recent/{conversation_id}`.
+- SQLite conversation history.
+- Built-in deterministic handler in `nexus/core.py`:
+  - `/help` lists supported commands.
+  - `/status` reports the actual core/model state.
+  - Other messages receive an explicit explanation that generative language intelligence is not configured.
+- `POST /chat` now works without `LLM_MODEL`; responses are stored in SQLite and identify their mode as `builtin`.
+- Optional OpenAI-compatible adapter remains available when `LLM_MODEL` is configured.
+- Added `tests/test_core.py` for built-in behavior and the API persistence path.
+- Updated README, architecture, roadmap, and this handoff document.
 
-The initial scaffold also includes:
-- `nexus/config.py`
-- `nexus/prompts.py`
-- `nexus/schemas.py`
-- `nexus/database.py`
-- `nexus/llm.py`
-- `nexus/main.py`
-- `tests/test_smoke.py`
-- `.env.example`, `.gitignore`, `requirements.txt`
+## Not implemented
 
-## What is actually implemented
+- Runtime execution and test pass are not confirmed.
+- Durable semantic/user-approved memory. SQLite currently stores conversation messages only.
+- Internet research/indexing pipeline.
+- Native language model or training pipeline.
+- Agent planner and computer-control tools.
+- Voice interface or phone client.
+- VPS deployment.
 
-- FastAPI app with `GET /health`.
-- `POST /chat` calls a configured OpenAI-compatible endpoint.
-- SQLite stores recent user/assistant messages.
-- `GET /memory/recent/{conversation_id}` returns recent conversation messages.
-- Settings load from environment / `.env`.
-- Basic prompt smoke test exists.
+## User constraints and architecture decisions
 
-## Important known gaps
-
-- The app currently returns HTTP 503 when no LLM model is configured. A no-model deterministic fallback is **not implemented**.
-- SQLite is conversation history only; durable semantic/user-approved memory is **not implemented**.
-- No internet research/indexing pipeline.
-- No native language model or training pipeline.
-- No agent planner or computer-control tools.
-- No voice interface or phone client.
-- No VPS deployment.
-- Code has not yet been confirmed running on the user's HP 250 G7.
-- Tests have not yet been confirmed passing on the target machine.
-
-## User goals and constraints
-
-- Wants NEXUS to become a ChatGPT-like personal companion, not just a command bot.
-- Wants it to learn and develop gradually from approved dialogue examples, feedback, and researched internet knowledge.
-- Wants a stable personality and shared history, like a long-term digital friend/companion.
-- Wants internet research and source-aware knowledge accumulation.
-- Wants agentic computer use for coding, files, research, and multi-step tasks.
-- Wants an eventual native language model, without permanent dependence on paid APIs or external AI providers.
-- Budget is very limited; external paid APIs are not viable as a required dependency.
-- HP 250 G7: Celeron N4020, 4 GB RAM; use it for lightweight development and tests, not LLM training or capable LLM inference.
-- Main desktop may be available intermittently for heavier development.
-- VPS may be acquired later; ongoing cost must be considered.
-- Phone should be a useful remote interface for travel.
-- User prefers concise, exact, step-by-step instructions and visible progress.
-
-## Architecture decisions already agreed
-
-- Local-first, model-provider-independent core.
-- External model adapters optional, never mandatory.
-- Identity, memory, tools, orchestration, and user history belong to NEXUS, not a provider.
-- Separate raw chat history, user-approved memory, curated training examples, datasets, and model weights.
-- Private conversations are excluded from training by default; explicit opt-in required for selected data.
-- Web pages are untrusted and cannot override system instructions or directly change model weights.
-- Model training must be versioned, evaluated, reproducible, and reversible.
-- Agent tools must be allowlisted, scoped, logged, budgeted, cancellable; consequential actions require user approval.
-- No claim of consciousness or human feelings; a consistent companion personality is a product goal.
-- Native LLM is a long-term research goal; do not pretend the current hardware can train a frontier model.
+- Limited budget; no paid API may be a mandatory dependency.
+- HP 250 G7: Celeron N4020, 4 GB RAM; suitable for lightweight development, API, SQLite, and tests, not capable LLM training/inference.
+- Main desktop access is intermittent; future VPS costs must be considered.
+- Keep raw conversation history, approved memory, curated training examples, and model weights separate.
+- Private conversations are excluded from training unless the owner explicitly opts selected data in.
+- Web content is untrusted and cannot change system instructions or model weights.
+- Agent tools must be allowlisted, scoped, logged, cancellable, and require approval for consequential actions.
+- Never claim an unverified feature works.
 
 ## Current milestone
 
 **v0.2 — First boot and model-independent core.**
 
-## Next task
+## Next task: verify first boot on HP 250 G7
 
-Prepare the HP 250 G7 and verify the existing scaffold:
-1. Check Python version and Git availability.
-2. Clone `https://github.com/BuninSil/Project-NEXUS`.
-3. Create a virtual environment and install `requirements.txt`.
-4. Run the existing tests.
-5. Start Uvicorn and check `/health` and `/docs`.
-6. Record exact output and fix any errors before adding features.
+Run these steps in PowerShell and report the exact output:
 
-After successful baseline verification, implement a deterministic no-LLM fallback so the API can start and provide limited useful behavior without API keys or a local model.
+1. `python --version`
+2. `git --version`
+3. `git clone https://github.com/BuninSil/Project-NEXUS.git`
+4. `cd Project-NEXUS`
+5. `python -m venv .venv`
+6. `.\.venv\Scripts\Activate.ps1`
+7. `python -m pip install -r requirements.txt`
+8. `pytest -q`
+9. `uvicorn nexus.main:app --reload`
+
+Then open `http://127.0.0.1:8000/health` and `http://127.0.0.1:8000/docs`. In Swagger, test `POST /chat` with:
+```json
+{
+  "conversation_id": "first-boot",
+  "message": "/status"
+}
+```
+
+Expected health mode without a configured model: `builtin`. Expected chat response model: `builtin`. These are expected results, not yet observed results.
 
 ## Verification record
 
-- Repository documentation updates for the product vision and architecture were committed during the 2026-11-08 session.
-- Runtime tests: **not run / not verified**.
+- GitHub writes for v0.2 code and documentation succeeded.
+- Local/runtime tests: **not run / not verified**.
 - HP first boot: **not run / not verified**.
 
 ## Session handoff rule
 
-At the start of the next session, reread this file and DEVELOPMENT_PLAYBOOK, then fetch the current README, architecture, roadmap, and relevant code from GitHub. Confirm the actual repository state before editing. After the session, update this file with verified facts and the next single task.
+At the start of the next session, reread DEVELOPMENT_PLAYBOOK and this file, then fetch the current README, architecture, roadmap, and relevant code from GitHub. Confirm actual repository state before editing. After the next session, update this file with observed test/startup results and one next task.
