@@ -1,4 +1,4 @@
-# NEXUS architecture (v0.1 foundation, evolving-intelligence target)
+# NEXUS architecture (v0.2 model-independent core foundation)
 
 ## Product direction
 
@@ -10,19 +10,29 @@ The detailed product vision and constraints are documented in [EVOLVING_INTELLIG
 
 The current chat path is:
 
-`FastAPI -> Chat orchestration -> optional model adapter`
+`FastAPI -> Chat orchestration -> deterministic built-in handler OR optional model adapter`
 
-This must evolve into a model-independent core:
+The intended long-term architecture is:
 
 `Interfaces -> Core orchestration -> Memory / Knowledge / Planner / Tools`
-  
-`                              -> Native language intelligence (future)`
-  
-`                              -> Optional external model adapters`
 
-The API, deterministic workflows, memory, knowledge store, task state, and safety policy must remain usable when no model endpoint or API key is configured. Model absence must produce a clear capability-limited response, not a startup failure.
+`                              -> Native language intelligence (future)`
 
-## Core subsystems
+`                              -> Optional external model adapters`
+
+The API and deterministic workflows must start without a model endpoint or API key. Model absence produces an explicit capability-limited response, not a startup failure.
+
+## Current implemented foundation
+
+- FastAPI endpoints: `GET /health`, `POST /chat`, and `GET /memory/recent/{conversation_id}`.
+- SQLite conversation history.
+- Deterministic built-in handler with `/help`, `/status`, and an explicit no-model response for other messages.
+- Optional OpenAI-compatible model adapter selected when `LLM_MODEL` is configured.
+- Environment-based settings.
+
+The built-in handler is deliberately limited. It is not a language model and does not provide open-ended reasoning or general knowledge.
+
+## Core subsystems (future scope)
 
 - **Identity and policy:** stable NEXUS identity, user preferences, instruction hierarchy, and permission checks.
 - **Conversation and context:** sessions, message history, context selection, and model-independent orchestration.
@@ -60,8 +70,6 @@ Keep orchestration and inference separate so compute can move without rewriting 
 - Provide cancellation, backups/rollback where practical, and an emergency stop.
 - A remote VPS requires HTTPS, authentication, rate limiting, backups, and secret management before public exposure.
 
-## Current implementation status
+## Verification status
 
-The repository currently contains a v0.1 scaffold: FastAPI endpoints, SQLite conversation history, configurable OpenAI-compatible adapter, configuration, schemas, prompts, and smoke-test definitions. The code has not yet been confirmed running on the target HP and tests have not yet been reported as passing.
-
-Not implemented yet: model-independent fallback, durable semantic memory, internet research, native model training, agent tools, voice, and production deployment.
+The v0.2 deterministic path and tests have been committed, but runtime execution and test results have not yet been verified on the target HP 250 G7. Do not describe the application as runtime-verified until those checks are completed.
