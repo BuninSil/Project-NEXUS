@@ -25,12 +25,14 @@ The hardware model used for this run was not confirmed; do not label it as an HP
 
 - FastAPI application: GET / serves the browser chat, GET /health, POST /chat, and GET /memory/recent/{conversation_id}.
 - Static responsive first-party UI in nexus/static/; no Node.js, frontend framework, CDN, or third-party scripts.
+- Viewport-pinned chat layout: the top bar, conversation/voice controls, sidebar actions, and message composer stay visible; only the message history scrolls. Uses dynamic viewport height for mobile browser chrome/keyboard changes.
 - UI sends messages to the existing API, restores up to 100 recent messages for its active conversation, starts a new conversation, and displays core/model status.
 - SQLite conversation history.
 - Built-in deterministic handler: /help, /status, and an honest no-model response for other messages.
 - Optional OpenAI-compatible adapter remains available when LLM_MODEL is configured.
 - Browser-native Russian speech synthesis, per-message playback, automatic speech toggle, and stop control.
 - Speech-only pronunciation normalization: NEXUS and common project acronyms/technology names are respelled for Russian playback; a curated list of frequently mis-stressed Russian words receives explicit stress marks. Visible chat text and stored messages remain unchanged.
+- Latest UI maintenance: fixed the chat layout so new messages no longer push controls out of view; added static regression assertions for viewport sizing and message-only scrolling. Runtime/browser verification is pending.
 - Hands-free voice mode using SpeechRecognition/webkitSpeechRecognition: continuous Russian recognition, one-second silence-based turn completion, submission through the existing POST /chat endpoint, spoken response, and automatic return to listening.
 - Voice mode can be explicitly stopped. Microphone permission is requested by the browser after the user activates the mode.
 - Static asset test checks for the hands-free controls and recognition flow.
