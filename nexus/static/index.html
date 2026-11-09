@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#101820">
+  <meta name="description" content="Локальный интерфейс Project NEXUS">
+  <title>NEXUS — личный компаньон</title>
+  <link rel="stylesheet" href="/static/app.css">
+  <script src="/static/app.js" defer></script>
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar" aria-label="Панель NEXUS">
+      <a class="brand" href="/" aria-label="NEXUS, главная">
+        <span class="brand-mark">N</span>
+        <span class="brand-copy">
+          <strong>NEXUS</strong>
+          <small>PERSONAL INTELLIGENCE</small>
+        </span>
+      </a>
+      <button class="new-chat-button" id="new-chat" type="button">
+        <span aria-hidden="true">＋</span> Новый диалог
+      </button>
+      <div class="sidebar-note">
+        <span class="note-indicator"></span>
+        <div>
+          <strong>Локальное ядро</strong>
+          <p>История хранится на этом устройстве в SQLite.</p>
+        </div>
+      </div>
+      <div class="sidebar-footer">
+        <span class="footer-line"></span>
+        <span>ДВА РАЗУМА. ОДНА СИСТЕМА.</span>
+        <span>БЕСКОНЕЧНЫЕ ВОЗМОЖНОСТИ.</span>
+      </div>
+    </aside>
+    <main class="main-panel">
+      <header class="topbar">
+        <div class="topbar-title">
+          <span class="eyebrow">PERSONAL COMPANION</span>
+          <h1>Рабочее пространство</h1>
+        </div>
+        <div class="connection-state" id="connection-state" data-state="checking">
+          <span class="state-dot"></span>
+          <span id="connection-label">Проверка ядра…</span>
+        </div>
+      </header>
+      <section class="chat-panel" aria-label="Диалог с NEXUS">
+        <div class="conversation-meta">
+          <div>
+            <span class="eyebrow">ТЕКУЩИЙ СЕАНС</span>
+            <div class="conversation-id" id="conversation-label">Подключение…</div>
+          </div>
+          <span class="mode-pill" id="mode-pill">Проверка режима</span>
+        </div>
+        <div class="messages" id="messages" role="log" aria-live="polite" aria-relevant="additions">
+          <div class="welcome-card" id="welcome-card">
+            <div class="welcome-symbol">N</div>
+            <span class="eyebrow">PROJECT NEXUS / INITIALIZED</span>
+            <h2>Система на связи.</h2>
+            <p>Это первый интерфейс NEXUS. Напиши сообщение ниже, чтобы проверить канал связи с ядром.</p>
+            <div class="welcome-hint">Начни с <code>/status</code> или <code>/help</code></div>
+          </div>
+        </div>
+        <div class="composer-wrap">
+          <form class="composer" id="chat-form">
+            <label class="visually-hidden" for="message-input">Сообщение для NEXUS</label>
+            <textarea id="message-input" name="message" rows="1" maxlength="20000"
+              placeholder="Напиши сообщение NEXUS…" autocomplete="off" required></textarea>
+            <button class="send-button" id="send-button" type="submit" aria-label="Отправить сообщение">
+              <span aria-hidden="true">↑</span>
+            </button>
+          </form>
+          <div class="composer-caption">
+            <span>Enter — отправить · Shift + Enter — новая строка</span>
+            <span>Локальный интерфейс · API v0.2.1</span>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+</body>
+</html>

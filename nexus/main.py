@@ -1,4 +1,8 @@
+from pathlib import Path
+
 from fastapi import FastAPI, HTTPException
+from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
 
 from nexus.config import get_settings
 from nexus.core import builtin_reply
@@ -11,8 +15,17 @@ settings = get_settings()
 database = Database(settings.database_path)
 llm = OpenAICompatibleClient(settings)
 
-APP_VERSION = "0.2.0"
+APP_VERSION = "0.2.1"
+STATIC_DIR = Path(__file__).resolve().parent / "static"
+
 app = FastAPI(title=settings.nexus_name, version=APP_VERSION)
+app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
+
+
+@app.get("/", include_in_schema=False)
+async def chat_interface():
+    """Serve the first-party browser chat interface."""
+    return FileResponse(STATIC_DIR / "index.html")
 
 
 @app.get("/health")

@@ -41,3 +41,23 @@ def test_chat_endpoint_works_without_model(monkeypatch, tmp_path):
     history = client.get("/memory/recent/test-session")
     assert history.status_code == 200
     assert len(history.json()["messages"]) == 2
+
+
+def test_web_chat_page_is_served():
+    client = TestClient(main.app)
+    response = client.get("/")
+
+    assert response.status_code == 200
+    assert "NEXUS" in response.text
+    assert 'id="chat-form"' in response.text
+
+
+def test_web_chat_assets_are_served():
+    client = TestClient(main.app)
+    css = client.get("/static/app.css")
+    js = client.get("/static/app.js")
+
+    assert css.status_code == 200
+    assert "composer" in css.text
+    assert js.status_code == 200
+    assert 'fetch("/chat"' in js.text

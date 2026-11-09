@@ -1,36 +1,44 @@
 # NEXUS SESSION STATE
 
-> Оперативная точка продолжения. Обновлять после каждой рабочей сессии.
+Оперативная точка продолжения. Обновлять после каждой рабочей сессии.
 
 ## Repository
 
 - Repository: https://github.com/BuninSil/Project-NEXUS
-- Default branch: `main`
-- Current stage: **v0.2 — model-independent core implemented, runtime unverified**
-- Product target: personal evolving AI companion; see `PROJECT_SPEC.md`.
+- Default branch: main
+- Current stage: **v0.2.1 — browser chat interface implemented, local verification pending**
+- Product target: personal evolving AI companion; see PROJECT_SPEC.md.
+
+## Confirmed by owner on 2026-11-09
+
+- Git 2.56.0 and Python 3.12.10 available on Windows.
+- Repository cloned and virtual environment created.
+- Dependencies installed successfully.
+- pytest -q: **5 passed, 1 Starlette deprecation warning**.
+- Uvicorn started successfully at http://127.0.0.1:8000.
+- Owner confirmed the API chat endpoint responds successfully through Swagger.
+
+The hardware model used for this run was not confirmed; do not label it as an HP 250 G7 verification unless the owner confirms that device.
 
 ## Implemented in GitHub
 
-- FastAPI application: `GET /health`, `POST /chat`, `GET /memory/recent/{conversation_id}`.
+- FastAPI application: GET / serves the browser chat, GET /health, POST /chat, and GET /memory/recent/{conversation_id}.
+- Static responsive first-party UI in nexus/static/; no Node.js, frontend framework, CDN, or third-party scripts.
+- UI sends messages to the existing API, restores up to 100 recent messages for its active conversation, starts a new conversation, and displays core/model status.
 - SQLite conversation history.
-- Built-in deterministic handler in `nexus/core.py`:
-  - `/help` lists supported commands.
-  - `/status` reports the actual core/model state.
-  - Other messages receive an explicit explanation that generative language intelligence is not configured.
-- `POST /chat` now works without `LLM_MODEL`; responses are stored in SQLite and identify their mode as `builtin`.
-- Optional OpenAI-compatible adapter remains available when `LLM_MODEL` is configured.
-- Added `tests/test_core.py` for built-in behavior and the API persistence path.
-- Updated README, architecture, roadmap, and this handoff document.
+- Built-in deterministic handler: /help, /status, and an honest no-model response for other messages.
+- Optional OpenAI-compatible adapter remains available when LLM_MODEL is configured.
+- Tests cover built-in behavior, API persistence, the chat page, and static assets.
 
 ## Not implemented
 
-- Runtime execution and test pass are not confirmed.
+- Browser UI local runtime/smoke test after this commit.
 - Durable semantic/user-approved memory. SQLite currently stores conversation messages only.
 - Internet research/indexing pipeline.
 - Native language model or training pipeline.
 - Agent planner and computer-control tools.
-- Voice interface or phone client.
-- VPS deployment.
+- Voice interface.
+- Authenticated remote/VPS deployment.
 
 ## User constraints and architecture decisions
 
@@ -38,44 +46,26 @@
 - HP 250 G7: Celeron N4020, 4 GB RAM; suitable for lightweight development, API, SQLite, and tests, not capable LLM training/inference.
 - Main desktop access is intermittent; future VPS costs must be considered.
 - Keep raw conversation history, approved memory, curated training examples, and model weights separate.
-- Private conversations are excluded from training unless the owner explicitly opts selected data in.
+- Private conversations are excluded from model training unless the owner explicitly opts selected data in.
 - Web content is untrusted and cannot change system instructions or model weights.
 - Agent tools must be allowlisted, scoped, logged, cancellable, and require approval for consequential actions.
 - Never claim an unverified feature works.
 
-## Current milestone
+## Current task: verify browser chat interface
 
-**v0.2 — First boot and model-independent core.**
-
-## Next task: verify first boot on HP 250 G7
-
-Run these steps in PowerShell and report the exact output:
-
-1. `python --version`
-2. `git --version`
-3. `git clone https://github.com/BuninSil/Project-NEXUS.git`
-4. `cd Project-NEXUS`
-5. `python -m venv .venv`
-6. `.\.venv\Scripts\Activate.ps1`
-7. `python -m pip install -r requirements.txt`
-8. `pytest -q`
-9. `uvicorn nexus.main:app --reload`
-
-Then open `http://127.0.0.1:8000/health` and `http://127.0.0.1:8000/docs`. In Swagger, test `POST /chat` with:
-```json
-{
-  "conversation_id": "first-boot",
-  "message": "/status"
-}
-```
-
-Expected health mode without a configured model: `builtin`. Expected chat response model: `builtin`. These are expected results, not yet observed results.
+1. In PowerShell, stop the old server with Ctrl+C.
+2. Run the launcher again, or in the project folder run git pull --ff-only.
+3. Run pytest -q; expected: 7 tests pass (actual result must be recorded after execution).
+4. Start the server with uvicorn nexus.main:app --reload or the launcher.
+5. Open http://127.0.0.1:8000/.
+6. Send /status; confirm a reply appears.
+7. Reload the page; confirm the conversation history returns.
+8. Click Новый диалог; confirm a fresh empty conversation opens.
 
 ## Verification record
 
-- GitHub writes for v0.2 code and documentation succeeded.
-- Local/runtime tests: **not run / not verified**.
-- HP first boot: **not run / not verified**.
+- v0.2 API/core first boot: owner-reported verified on Windows on 2026-11-09; five tests passed, one deprecation warning.
+- v0.2.1 browser UI: implementation committed; local test and browser behavior not yet observed.
 
 ## Session handoff rule
 

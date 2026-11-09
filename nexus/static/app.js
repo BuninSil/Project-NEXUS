@@ -1,0 +1,163 @@
+(() => {
+  const STORAGE_KEY = "nexus.conversation_id";
+  const form = document.getElementById("chat-form");
+  const input = document.getElementById("message-input");
+  const sendButton = document.getElementById("send-button");
+  const messages = document.getElementById("messages");
+  const welcomeCard = document.getElementById("welcome-card");
+  const connection = document.getElementById("connection-state");
+  const connectionLabel = document.getElementById("connection-label");
+  const modePill = document.getElementById("mode-pill");
+  const conversationLabel = document.getElementById("conversation-label");
+  const newChatButton = document.getElementById("new-chat");
+
+  function makeConversationId() {
+    if (window.crypto && typeof window.crypto.randomUUID === "function") {
+      return window.crypto.randomUUID();
+    }
+    return "session-" + Date.now() + "-" + Math.random().toString(16).slice(2);
+  }
+
+  let conversationId = localStorage.getItem(STORAGE_KEY) || makeConversationId();
+  localStorage.setItem(STORAGE_KEY, conversationId);
+
+  function updateConversationLabel() {
+    conversationLabel.textContent = conversationId.slice(0, 8) + "…";
+  }
+
+  function scrollToLatest() {
+    messages.scrollTop = messages.scrollHeight;
+  }
+
+  function showWelcome(show) {
+    welcomeCard.hidden = !show;
+  }
+
+  function addMessage(role, content, timestamp, isError = false) {
+    showWelcome(false);
+    const article = document.createElement("article");
+    article.className = "message " + role + (isError ? " error" : "");
+
+    const avatar = document.createElement("div");
+    avatar.className = "avatar";
+    avatar.setAttribute("aria-hidden", "true");
+    avatar.textContent = role === "user" ? "В" : "N";
+
+    const body = document.createElement("div");
+    body.className = "message-body";
+
+    const heading = document.createElement("div");
+    heading.className = "message-heading";
+    const label = role === "user" ? "ВЫ" : "NEXUS";
+    const time = timestamp ? new Date(timestamp).toLocaleTimeString("ru-RU", {hour: "2-digit", minute: "2-digit"}) : "";
+    heading.textContent = time ? label + " · " + time : label;
+
+    const text = document.createElement("div");
+    text.className = "message-content";
+    text.textContent = content;
+
+    body.append(heading, text);
+    article.append(avatar, body);
+    messages.append(article);
+    scrollToLatest();
+    return article;
+  }
+
+  function setConnection(state, label) {
+    connection.dataset.state = state;
+    connectionLabel.textContent = label;
+  }
+
+  async function checkHealth() {
+    try {
+      const response = await fetch("/health");
+      if (!response.ok) throw new Error("HTTP " + response.status);
+      const health = await response.json();
+      setConnection("online", "Ядро на связи");
+      modePill.textContent = health.mode === "llm" ? "Модель подключена" : "Встроенный режим";
+    } catch (error) {
+      setConnection("offline", "Нет связи с ядром");
+      modePill.textContent = "Недоступно";
+    }
+  }
+
+  async function loadHistory() {
+    updateConversationLabel();
+    try {
+      const response = await fetch("/memory/recent/" + encodeURIComponent(conversationId) + "?limit=100");
+      if (!response.ok) throw new Error("Не удалось загрузить историю");
+      const data = await response.json();
+      messages.querySelectorAll(".message").forEach((node) => node.remove());
+      if (!data.messages.length) {
+        showWelcome(true);
+        return;
+      }
+      data.messages.forEach((item) => addMessage(item.role, item.content, item.created_at));
+    } catch (error) {
+      addMessage("assistant", "Не удалось загрузить историю диалога: " + error.message, null, true);
+    }
+  }
+
+  async function sendMessage(message) {
+    sendButton.disabled = true;
+    input.disabled = true;
+    addMessage("user", message);
+    const pending = addMessage("assistant", "Передаю сообщение ядру…");
+    pending.classList.add("pending");
+
+    try {
+      const response = await fetch("/chat", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({conversation_id: conversationId, message})
+      });
+      const payload = await response.json();
+      if (!response.ok) {
+        const detail = payload.detail || ("HTTP " + response.status);
+        throw new Error(typeof detail === "string" ? detail : JSON.stringify(detail));
+      }
+      pending.remove();
+      addMessage("assistant", payload.reply);
+      await checkHealth();
+    } catch (error) {
+      pending.remove();
+      addMessage("assistant", "Не удалось получить ответ: " + error.message, null, true);
+    } finally {
+      sendButton.disabled = false;
+      input.disabled = false;
+      input.focus();
+    }
+  }
+
+  form.addEventListener("submit", (event) => {
+    event.preventDefault();
+    const message = input.value.trim();
+    if (!message || sendButton.disabled) return;
+    input.value = "";
+    input.style.height = "auto";
+    sendMessage(message);
+  });
+
+  input.addEventListener("input", () => {
+    input.style.height = "auto";
+    input.style.height = Math.min(input.scrollHeight, 180) + "px";
+  });
+
+  input.addEventListener("keydown", (event) => {
+    if (event.key === "Enter" && !event.shiftKey) {
+      event.preventDefault();
+      form.requestSubmit();
+    }
+  });
+
+  newChatButton.addEventListener("click", () => {
+    conversationId = makeConversationId();
+    localStorage.setItem(STORAGE_KEY, conversationId);
+    messages.querySelectorAll(".message").forEach((node) => node.remove());
+    showWelcome(true);
+    updateConversationLabel();
+    input.focus();
+  });
+
+  Promise.all([checkHealth(), loadHistory()]);
+})();
