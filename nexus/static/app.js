@@ -223,7 +223,7 @@
   }
 
   function normalizeSpeech(value) {
-    return value.toLocaleLowerCase("ru-RU").replace(/[^\\p{L}\\p{N}\\s]/gu, " ").replace(/\\s+/g, " ").trim();
+    return value.toLocaleLowerCase("ru-RU").replace(/[^\p{L}\p{N}\s]/gu, " ").replace(/\s+/g, " ").trim();
   }
 
   function likelyAssistantEcho(transcript) {
