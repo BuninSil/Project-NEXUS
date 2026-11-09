@@ -229,10 +229,14 @@
     }
   }
 
+  function correctRecognizedText(value) {
+    return value
+      .replace(/(^|[^\p{L}\p{N}_])(нехус|нехуз|нехоз)(?=$|[^\p{L}\p{N}_])/giu, "$1NEXUS")
+      .replace(/(^|[^\p{L}\p{N}_])нехуй(?=\s+(?:получил|получает|сообщение|привет|здравствуй)(?:\s|$))/giu, "$1NEXUS");
+  }
+
   function normalizeSpeech(value) {
-    return value.toLocaleLowerCase("ru-RU")
-      .replace(/(^|[^\p{L}\p{N}_])(нехус|нехуз|нехоз)(?=$|[^\p{L}\p{N}_])/gu, "$1nexus")
-      .replace(/(^|[^\p{L}\p{N}_])нехуй(?=\s+(?:получил|получает|сообщение)(?:\s|$))/gu, "$1nexus")
+    return correctRecognizedText(value).toLocaleLowerCase("ru-RU")
       .replace(/[^\p{L}\p{N}\s]/gu, " ")
       .replace(/\s+/g, " ")
       .trim();
@@ -266,8 +270,9 @@
     voiceStop.hidden = true;
     voiceInterrupt.hidden = true;
     if (transcript.trim()) {
-      interruptedSeed = normalizeSpeech(transcript);
-      pendingTranscript = transcript.trim() + " ";
+      const correctedTranscript = correctRecognizedText(transcript).trim();
+      interruptedSeed = normalizeSpeech(correctedTranscript);
+      pendingTranscript = correctedTranscript + " ";
       setVoiceStatus("Перебивание распознано, слушаю дальше…", "listening");
       window.clearTimeout(silenceTimer);
       silenceTimer = window.setTimeout(finishVoiceTurn, 1000);
@@ -320,10 +325,10 @@
         if (result.isFinal && !speaking) {
           const normalized = normalizeSpeech(transcript);
           if (interruptedSeed && (normalized.startsWith(interruptedSeed) || interruptedSeed.startsWith(normalized))) {
-            pendingTranscript = transcript + " ";
+            pendingTranscript = correctRecognizedText(transcript) + " ";
             interruptedSeed = "";
           } else {
-            pendingTranscript += transcript + " ";
+            pendingTranscript += correctRecognizedText(transcript) + " ";
             interruptedSeed = "";
           }
         }
