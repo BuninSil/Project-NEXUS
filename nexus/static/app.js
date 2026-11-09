@@ -13,7 +13,6 @@
   const newChatButton = document.getElementById("new-chat");
   const voiceToggle = document.getElementById("voice-toggle");
   const voiceStop = document.getElementById("voice-stop");
-  const voiceInterrupt = document.getElementById("voice-interrupt");
   const voiceModeToggle = document.getElementById("voice-mode-toggle");
   const voiceStatus = document.getElementById("voice-status");
   let voiceEnabled = localStorage.getItem(VOICE_STORAGE_KEY) === "true";
@@ -23,14 +22,11 @@
 
   let conversationId = localStorage.getItem(STORAGE_KEY) || makeConversationId();
   let recognition = null;
-  let recognitionResumeTimer = null;
   let voiceModeActive = false;
   let voiceBusy = false;
   let speaking = false;
   let silenceTimer = null;
   let pendingTranscript = "";
-  let currentSpeechText = "";
-  let interruptedSeed = "";
 
   function makeConversationId() {
     if (window.crypto && typeof window.crypto.randomUUID === "function") return window.crypto.randomUUID();
@@ -51,37 +47,23 @@
     voiceStatus.dataset.state = state || "idle";
   }
 
-  function prepareSpeechText(content) {
-    return content
-      .replace(/\bNEXUS\b/gi, "нэ́ксус")
-      .replace(/нексус/giu, "нэ́ксус");
-  }
-
   function speakText(content, onFinished) {
     if (!speechSupported || !content) return false;
     window.speechSynthesis.cancel();
-    const spokenContent = prepareSpeechText(content);
-    currentSpeechText = spokenContent;
-    const utterance = new SpeechSynthesisUtterance(spokenContent);
+    const utterance = new SpeechSynthesisUtterance(content);
     utterance.lang = "ru-RU";
     utterance.rate = 0.98;
     const russianVoice = window.speechSynthesis.getVoices().find((voice) => voice.lang.toLowerCase().startsWith("ru"));
     if (russianVoice) utterance.voice = russianVoice;
     const finish = () => {
       speaking = false;
-      currentSpeechText = "";
       voiceStop.hidden = true;
-      voiceInterrupt.hidden = true;
       if (typeof onFinished === "function") onFinished();
     };
     speaking = true;
     utterance.onstart = () => {
       voiceStop.hidden = false;
-      voiceInterrupt.hidden = !voiceModeActive;
-      if (voiceModeActive) {
-        stopRecognition();
-        setVoiceStatus("NEXUS отвечает… Для перебивания нажми кнопку", "speaking");
-      }
+      if (voiceModeActive) setVoiceStatus("NEXUS отвечает…", "speaking");
     };
     utterance.onend = finish;
     utterance.onerror = finish;
@@ -96,7 +78,6 @@
       ? (voiceEnabled ? "Озвучка: вкл." : "Озвучка: выкл.")
       : "Озвучка недоступна";
     voiceModeToggle.disabled = !recognitionSupported;
-    voiceInterrupt.hidden = !speaking || !voiceModeActive;
     voiceModeToggle.textContent = voiceModeActive ? "Завершить голосовой режим" : "🎙 Голосовой режим";
     voiceModeToggle.setAttribute("aria-pressed", String(voiceModeActive));
     if (!recognitionSupported) setVoiceStatus("Распознавание речи недоступно в этом браузере", "error");
@@ -172,73 +153,11 @@
 
   function resumeVoiceMode() {
     if (!voiceModeActive || voiceBusy || speaking) return;
-    window.clearTimeout(recognitionResumeTimer);
     setVoiceStatus("Слушаю…", "listening");
-    recognitionResumeTimer = window.setTimeout(() => {
-      if (!voiceModeActive || voiceBusy || speaking || recognition) return;
-      const instance = new SpeechRecognition();
-      recognition = instance;
-      instance.lang = "ru-RU";
-      instance.continuous = true;
-      instance.interimResults = true;
-      instance.maxAlternatives = 3;
-      if ("SpeechRecognitionPhrase" in window && "phrases" in instance) {
-        try {
-          instance.phrases = ["NEXUS", "Нэксус", "Нексус", "Статус", "Привет", "Перебить"]
-            .map((phrase) => new window.SpeechRecognitionPhrase(phrase, 8));
-        } catch (error) { /* Phrase biasing is optional. */ }
-      }
-      instance.onstart = () => {
-        if (recognition === instance) setVoiceStatus("Слушаю…", "listening");
-      };
-      instance.onresult = (event) => {
-        if (recognition !== instance || speaking || voiceBusy) return;
-        for (let index = event.resultIndex; index < event.results.length; index += 1) {
-          const result = event.results[index];
-          const transcript = result[0].transcript.trim();
-          if (result.isFinal) {
-            const normalized = normalizeSpeech(transcript);
-            if (interruptedSeed && (normalized.startsWith(interruptedSeed) || interruptedSeed.startsWith(normalized))) {
-              pendingTranscript = correctRecognizedText(transcript) + " ";
-            } else {
-              pendingTranscript += correctRecognizedText(transcript) + " ";
-            }
-            interruptedSeed = "";
-          }
-        }
-        if (pendingTranscript.trim()) {
-          setVoiceStatus("Речь распознана, жду окончания фразы…", "processing");
-          window.clearTimeout(silenceTimer);
-          silenceTimer = window.setTimeout(finishVoiceTurn, 1000);
-        }
-      };
-      instance.onerror = (event) => {
-        if (recognition !== instance) return;
-        if (event.error === "not-allowed" || event.error === "service-not-allowed") {
-          voiceModeActive = false;
-          voiceBusy = false;
-          recognition = null;
-          updateVoiceControls();
-          setVoiceStatus("Нет доступа к микрофону. Разреши его для этой страницы.", "error");
-        } else if (event.error !== "no-speech" && event.error !== "aborted") {
-          setVoiceStatus("Ошибка распознавания: " + event.error, "error");
-        }
-      };
-      instance.onend = () => {
-        if (recognition !== instance) return;
-        recognition = null;
-        if (voiceModeActive && !speaking && !voiceBusy) resumeVoiceMode();
-      };
-      try {
-        instance.start();
-      } catch (error) {
-        if (recognition === instance) recognition = null;
-        setVoiceStatus("Не удалось запустить микрофон: " + error.message, "error");
-        if (voiceModeActive && !voiceBusy && !speaking) {
-          recognitionResumeTimer = window.setTimeout(resumeVoiceMode, 800);
-        }
-      }
-    }, 250);
+    window.setTimeout(() => {
+      if (!voiceModeActive || voiceBusy || speaking) return;
+      try { recognition.start(); } catch (error) { /* Recognition may still be shutting down. onend retries. */ }
+    }, 300);
   }
 
   async function sendMessage(message, fromVoice = false) {
@@ -287,43 +206,9 @@
     }
   }
 
-  function correctRecognizedText(value) {
-    return value
-      .replace(/(^|[^\p{L}\p{N}_])(нехус|нехуз|нехоз)(?=$|[^\p{L}\p{N}_])/giu, "$1NEXUS")
-      .replace(/(^|[^\p{L}\p{N}_])нехуй(?=\s+(?:получил|получает|сообщение|привет|здравствуй)(?:\s|$))/giu, "$1NEXUS");
-  }
-
-  function normalizeSpeech(value) {
-    return correctRecognizedText(value).toLocaleLowerCase("ru-RU")
-      .replace(/[^\p{L}\p{N}\s]/gu, " ")
-      .replace(/\s+/g, " ")
-      .trim();
-  }
-
-  function interruptSpeech(transcript = "") {
-    if (!speaking || !voiceModeActive) return;
-    window.speechSynthesis.cancel();
-    speaking = false;
-    voiceBusy = false;
-    currentSpeechText = "";
-    voiceStop.hidden = true;
-    voiceInterrupt.hidden = true;
-    if (transcript.trim()) {
-      const correctedTranscript = correctRecognizedText(transcript).trim();
-      interruptedSeed = normalizeSpeech(correctedTranscript);
-      pendingTranscript = correctedTranscript + " ";
-      setVoiceStatus("Перебивание распознано, слушаю дальше…", "listening");
-      window.clearTimeout(silenceTimer);
-      silenceTimer = window.setTimeout(finishVoiceTurn, 1000);
-    } else {
-      setVoiceStatus("Озвучка остановлена. Слушаю…", "listening");
-      resumeVoiceMode();
-    }
-  }
-
   function stopRecognition() {
     if (!recognition) return;
-    try { recognition.abort(); } catch (error) { /* It may already be stopped. */ }
+    try { recognition.stop(); } catch (error) { /* It may already be stopped. */ }
   }
 
   function finishVoiceTurn() {
@@ -339,10 +224,39 @@
 
   function startVoiceMode() {
     if (!recognitionSupported) return;
+    recognition = new SpeechRecognition();
+    recognition.lang = "ru-RU";
+    recognition.continuous = true;
+    recognition.interimResults = false;
+    recognition.maxAlternatives = 1;
+    recognition.onresult = (event) => {
+      if (voiceBusy) return;
+      for (let index = event.resultIndex; index < event.results.length; index += 1) {
+        if (event.results[index].isFinal) pendingTranscript += event.results[index][0].transcript + " ";
+      }
+      if (pendingTranscript.trim()) {
+        setVoiceStatus("Речь распознана, жду окончания фразы…", "processing");
+        window.clearTimeout(silenceTimer);
+        silenceTimer = window.setTimeout(finishVoiceTurn, 1000);
+      }
+    };
+    recognition.onerror = (event) => {
+      if (event.error === "not-allowed" || event.error === "service-not-allowed") {
+        voiceModeActive = false;
+        voiceBusy = false;
+        updateVoiceControls();
+        setVoiceStatus("Нет доступа к микрофону. Разреши его для этой страницы.", "error");
+      } else if (event.error !== "no-speech" && event.error !== "aborted") {
+        setVoiceStatus("Ошибка распознавания: " + event.error, "error");
+      }
+    };
+    recognition.onend = () => {
+      if (voiceModeActive && !voiceBusy && !speaking) resumeVoiceMode();
+    };
     voiceModeActive = true;
     voiceBusy = false;
     updateVoiceControls();
-    setVoiceStatus("Запускаю микрофон…", "processing");
+    setVoiceStatus("Запрашиваю доступ к микрофону…", "processing");
     resumeVoiceMode();
   }
 
@@ -351,13 +265,10 @@
     voiceBusy = false;
     pendingTranscript = "";
     window.clearTimeout(silenceTimer);
-    window.clearTimeout(recognitionResumeTimer);
     stopRecognition();
     if (speechSupported) window.speechSynthesis.cancel();
     speaking = false;
-    currentSpeechText = "";
     voiceStop.hidden = true;
-    voiceInterrupt.hidden = true;
     updateVoiceControls();
     setVoiceStatus("Голосовой режим выключен", "idle");
   }
@@ -399,13 +310,10 @@
     if (voiceModeActive) stopVoiceMode();
     else startVoiceMode();
   });
-  voiceInterrupt.addEventListener("click", () => interruptSpeech());
   voiceStop.addEventListener("click", () => {
     if (speechSupported) window.speechSynthesis.cancel();
     speaking = false;
-    currentSpeechText = "";
     voiceStop.hidden = true;
-    voiceInterrupt.hidden = true;
     if (voiceModeActive) {
       voiceBusy = false;
       resumeVoiceMode();
