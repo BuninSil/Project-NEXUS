@@ -14,7 +14,7 @@
 - Git 2.56.0 and Python 3.12.10 available on Windows.
 - Repository cloned and virtual environment created.
 - Dependencies installed successfully.
-- pytest -q: five tests passed at the initial v0.2 checkpoint, with one Starlette deprecation warning.
+- pytest -q: five tests passed at the initial v0.2 checkpoint; on 2026-11-09 the latest checkout passed all nine tests (9 passed, 1 StarletteDeprecationWarning).
 - Uvicorn started successfully at http://127.0.0.1:8000.
 - Owner confirmed the browser chat UI works.
 - Owner confirmed browser speech output works.
@@ -32,7 +32,7 @@ The hardware model used for this run was not confirmed; do not label it as an HP
 - Optional OpenAI-compatible adapter remains available when LLM_MODEL is configured.
 - Browser-native Russian speech synthesis, per-message playback, automatic speech toggle, and stop control.
 - Speech-only pronunciation normalization: NEXUS and common project acronyms/technology names are respelled for Russian playback; a curated list of frequently mis-stressed Russian words receives explicit stress marks. Visible chat text and stored messages remain unchanged.
-- Latest UI maintenance: fixed the chat layout so new messages no longer push controls out of view; added static regression assertions for viewport sizing and message-only scrolling. Runtime/browser verification is pending.
+- Latest UI maintenance: fixed the chat layout so new messages no longer push controls out of view; added static regression assertions for viewport sizing and message-only scrolling. Owner confirmed on 2026-11-09 that the controls remain visible and the layout behaves normally during use.
 - Hands-free voice mode using SpeechRecognition/webkitSpeechRecognition: continuous Russian recognition, one-second silence-based turn completion, submission through the existing POST /chat endpoint, spoken response, and automatic return to listening.
 - Voice mode can be explicitly stopped. Microphone permission is requested by the browser after the user activates the mode.
 - Static asset test checks for the hands-free controls and recognition flow.
@@ -60,12 +60,13 @@ The hardware model used for this run was not confirmed; do not label it as an HP
 - Agent tools must be allowlisted, scoped, logged, cancellable, and require approval for consequential actions.
 - Never claim an unverified feature works.
 
-## Current task: verify Russian pronunciation normalization
+## Current task: finish local voice and pronunciation verification
 
-1. Run `Start-NEXUS.bat` and record the actual pytest result.
-2. In the browser, enable speech output and ask NEXUS to say its name, technical terms (API, SQLite, Python, GitHub), and several stress-sensitive Russian words (звонит, договор, каталог).
-3. Confirm whether the selected Russian voice respects the inserted stress marks. Different browser/OS voices may ignore them.
-4. Record mispronounced words and expand the curated lexicon only with verified readings.
+1. In the browser, enable speech output and ask NEXUS to say its name, technical terms (API, SQLite, Python, GitHub), and several stress-sensitive Russian words (звонит, договор, каталог).
+2. Confirm whether the selected Russian voice respects the inserted stress marks. Different browser/OS voices may ignore them.
+3. Test hands-free mode in Chrome or Edge: grant microphone access, speak a short phrase, wait for NEXUS to answer aloud, and confirm it resumes listening. Repeat for at least two turns, then stop the mode.
+4. Record mispronounced words and any exact browser recognition errors. Do not mark voice mode verified until the complete cycle succeeds.
+5. After voice checks, begin the durable-memory milestone: inspect the current SQLite schema and design user-approved memory with provenance, retrieval, correction, export/delete controls, and isolation tests.
 
 ## Previous task: local verification of v0.4 voice mode
 
@@ -83,6 +84,8 @@ The hardware model used for this run was not confirmed; do not label it as an HP
 
 - v0.2 API/core first boot: owner-reported verified on Windows on 2026-11-09; five tests passed, one deprecation warning.
 - v0.2.1 browser UI: owner confirmed on 2026-11-09 that the interface works.
+- Viewport-pinned controls: owner confirmed on 2026-11-09 that the layout behaves normally and all controls stay visible.
+- Latest local startup: owner reported 9 tests passed, 1 Starlette deprecation warning, Uvicorn started, and initial GET/POST requests returned 200 OK.
 - v0.3.1 speech output: owner confirmed on 2026-11-09 that speech playback works.
 - v0.4 hands-free voice: code and static test committed; runtime verification pending.
 
