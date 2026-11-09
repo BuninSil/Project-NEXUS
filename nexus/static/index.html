@@ -22,6 +22,9 @@
       <button class="new-chat-button" id="new-chat" type="button">
         <span aria-hidden="true">＋</span> Новый диалог
       </button>
+      <button class="memory-open-button" id="memory-open" type="button">
+        <span aria-hidden="true">◈</span> Память NEXUS
+      </button>
       <div class="sidebar-note">
         <span class="note-indicator"></span>
         <div>
@@ -86,5 +89,38 @@
       </section>
     </main>
   </div>
+  <section class="memory-overlay" id="memory-overlay" hidden>
+    <div class="memory-dialog" role="dialog" aria-modal="true" aria-labelledby="memory-title">
+      <header class="memory-header">
+        <div>
+          <span class="eyebrow">USER-CONTROLLED STORAGE</span>
+          <h2 id="memory-title">Память NEXUS</h2>
+          <p>Здесь хранятся только записи, которые ты добавил вручную.</p>
+        </div>
+        <button class="memory-close" id="memory-close" type="button" aria-label="Закрыть">×</button>
+      </header>
+      <form class="memory-create-form" id="memory-create-form">
+        <label for="memory-content">Новая запись</label>
+        <textarea id="memory-content" rows="2" maxlength="4000" placeholder="Например: предпочитаю учиться на практике…" required></textarea>
+        <div class="memory-form-row">
+          <select id="memory-category" aria-label="Категория записи">
+            <option value="fact">Факт</option>
+            <option value="preference">Предпочтение</option>
+            <option value="goal">Цель</option>
+            <option value="project">Проект</option>
+            <option value="procedure">Инструкция</option>
+            <option value="other" selected>Другое</option>
+          </select>
+          <button class="memory-save" type="submit">Сохранить в память</button>
+        </div>
+      </form>
+      <div class="memory-toolbar">
+        <input id="memory-search" type="search" placeholder="Поиск по памяти…" aria-label="Поиск по памяти">
+        <button id="memory-export" type="button">Экспорт JSON</button>
+      </div>
+      <p class="memory-status" id="memory-status" role="status" aria-live="polite"></p>
+      <div class="memory-list" id="memory-list"></div>
+    </div>
+  </section>
 </body>
 </html>
