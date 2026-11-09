@@ -15,7 +15,7 @@
   const voiceStop = document.getElementById("voice-stop");
   const voiceModeToggle = document.getElementById("voice-mode-toggle");
   const voiceStatus = document.getElementById("voice-status");
-  const voiceEnabled = localStorage.getItem(VOICE_STORAGE_KEY) === "true";
+  let voiceEnabled = localStorage.getItem(VOICE_STORAGE_KEY) === "true";
   const speechSupported = "speechSynthesis" in window && "SpeechSynthesisUtterance" in window;
   const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
   const recognitionSupported = Boolean(SpeechRecognition);
@@ -298,11 +298,11 @@
   });
 
   voiceToggle.addEventListener("click", () => {
-    const enabled = localStorage.getItem(VOICE_STORAGE_KEY) !== "true";
-    localStorage.setItem(VOICE_STORAGE_KEY, String(enabled));
-    voiceToggle.setAttribute("aria-pressed", String(enabled));
-    voiceToggle.textContent = enabled ? "Озвучка: вкл." : "Озвучка: выкл.";
-    if (!enabled && speechSupported) window.speechSynthesis.cancel();
+    voiceEnabled = !voiceEnabled;
+    localStorage.setItem(VOICE_STORAGE_KEY, String(voiceEnabled));
+    voiceToggle.setAttribute("aria-pressed", String(voiceEnabled));
+    voiceToggle.textContent = voiceEnabled ? "Озвучка: вкл." : "Озвучка: выкл.";
+    if (!voiceEnabled && speechSupported) window.speechSynthesis.cancel();
   });
   voiceModeToggle.addEventListener("click", () => {
     if (voiceModeActive) stopVoiceMode();
