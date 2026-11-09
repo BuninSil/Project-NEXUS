@@ -23,8 +23,9 @@ The browser client is a static first-party interface served by FastAPI. It uses 
 - FastAPI application: GET / serves the browser chat, GET /health, POST /chat, GET /memory/recent/{conversation_id}, and CRUD/export endpoints under /memory.
 - Static CSS and JavaScript are served from /static; no frontend framework, Node.js build, CDN, or third-party script is required.
 - SQLite conversation history; the browser stores only its current conversation identifier in localStorage.
-- Separate user-managed durable memory table. Explicit API operations support create, search/list, correction, deletion, and JSON export; memory is never extracted automatically from raw chat messages.
-- Browser memory panel supports manual entry, category tagging, search, edit, delete, and export. Records retain source, confidence, and created/updated timestamps.
+- Separate durable-memory table with API operations for create, search/list, correction, deletion, and JSON export; records retain category, source/provenance, confidence, and timestamps.
+- The current browser memory panel is an administrative inspection/correction tool and temporary manual test interface, not the intended day-to-day workflow.
+- Autonomous extraction, confidence scoring, consolidation, conflict resolution, expiry, and relevant retrieval are not implemented yet. The target behavior is for NEXUS to maintain memory itself; the owner should not have to manually add routine memories.
 - Deterministic built-in handler with /help, /status, and an explicit no-model response for other messages.
 - Optional OpenAI-compatible model adapter selected when LLM_MODEL is configured.
 - The interface restores the latest 100 messages for the current conversation and can start a fresh conversation.
@@ -45,7 +46,7 @@ The browser client is a static first-party interface served by FastAPI. It uses 
 
 - Identity and policy: stable NEXUS identity, user preferences, instruction hierarchy, and permission checks.
 - Conversation and context: sessions, message history, context selection, and model-independent orchestration.
-- Memory: v0.3 manually approved durable records and CRUD/export are owner-verified locally. Relevance ranking and bounded injection of explicitly saved records into model context remain the next increment; automatic extraction is not enabled.
+- Memory: the SQLite store and management API are owner-verified locally. Autonomous memory formation/maintenance and relevance-ranked retrieval are not implemented yet. The next memory increment must make NEXUS the routine memory manager; the browser panel remains for owner oversight, correction, export, and deletion.
 - Knowledge/research: source index, timestamps, claims, deduplication, freshness and confidence metadata.
 - Planner and task runtime: explicit task states, resumability, schedules, budgets, and cancellation.
 - Tool registry: allowlisted capabilities with scoped permissions, schemas, logs, and confirmation requirements.
@@ -54,7 +55,7 @@ The browser client is a static first-party interface served by FastAPI. It uses 
 
 ## Learning architecture
 
-Keep raw conversation history, user-approved durable memory, curated training examples, and versioned model datasets/checkpoints separate. Do not automatically train on every conversation or crawled page. Private conversations are excluded from training by default.
+Keep raw conversation history, autonomously maintained durable memory, curated training examples, and versioned model datasets/checkpoints separate. NEXUS may automatically maintain ordinary useful memory under explicit privacy rules, but must not automatically train model weights on conversations or crawled pages. Private conversations are excluded from model training by default.
 
 ## Deployment target
 
