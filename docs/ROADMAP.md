@@ -22,7 +22,7 @@ The long-term target is a local-first personal AI companion with native language
 
 ## Voice-mode scope and limitations
 
-The first hands-free implementation uses browser-native SpeechRecognition (including the Chromium webkit-prefixed implementation) and SpeechSynthesis. It is intended for an active browser tab. Recognition support, microphone permission, network/browser speech service availability, and installed voices vary by browser and operating system. The initial v0.4 version paused recognition during speech. v0.4.1 adds best-effort recognition during playback, echo-overlap filtering, and a manual interruption control. Reliable acoustic echo cancellation and background listening are not guaranteed.
+The hands-free implementation uses browser-native SpeechRecognition (including the Chromium webkit-prefixed implementation) and SpeechSynthesis. It is intended for an active browser tab. Recognition support, microphone permission, network/browser speech service availability, and installed voices vary by browser and operating system. v0.4.1 adds best-effort recognition during playback, a manual interruption control, echo-overlap filtering, conservative phrase detection, Russian pronunciation hints for the product name, and optional browser phrase biasing. Reliable acoustic echo cancellation, perfect ASR, and background listening are not guaranteed.
 
 ## Learning and safety gates
 
