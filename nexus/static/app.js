@@ -23,6 +23,7 @@
 
   let conversationId = localStorage.getItem(STORAGE_KEY) || makeConversationId();
   let recognition = null;
+  let recognitionResumeTimer = null;
   let voiceModeActive = false;
   let voiceBusy = false;
   let speaking = false;
@@ -171,11 +172,73 @@
 
   function resumeVoiceMode() {
     if (!voiceModeActive || voiceBusy || speaking) return;
+    window.clearTimeout(recognitionResumeTimer);
     setVoiceStatus("Слушаю…", "listening");
-    window.setTimeout(() => {
-      if (!voiceModeActive || voiceBusy || speaking) return;
-      try { recognition.start(); } catch (error) { /* Recognition may still be shutting down. onend retries. */ }
-    }, 300);
+    recognitionResumeTimer = window.setTimeout(() => {
+      if (!voiceModeActive || voiceBusy || speaking || recognition) return;
+      const instance = new SpeechRecognition();
+      recognition = instance;
+      instance.lang = "ru-RU";
+      instance.continuous = true;
+      instance.interimResults = true;
+      instance.maxAlternatives = 3;
+      if ("SpeechRecognitionPhrase" in window && "phrases" in instance) {
+        try {
+          instance.phrases = ["NEXUS", "Нэксус", "Нексус", "Статус", "Привет", "Перебить"]
+            .map((phrase) => new window.SpeechRecognitionPhrase(phrase, 8));
+        } catch (error) { /* Phrase biasing is optional. */ }
+      }
+      instance.onstart = () => {
+        if (recognition === instance) setVoiceStatus("Слушаю…", "listening");
+      };
+      instance.onresult = (event) => {
+        if (recognition !== instance || speaking || voiceBusy) return;
+        for (let index = event.resultIndex; index < event.results.length; index += 1) {
+          const result = event.results[index];
+          const transcript = result[0].transcript.trim();
+          if (result.isFinal) {
+            const normalized = normalizeSpeech(transcript);
+            if (interruptedSeed && (normalized.startsWith(interruptedSeed) || interruptedSeed.startsWith(normalized))) {
+              pendingTranscript = correctRecognizedText(transcript) + " ";
+            } else {
+              pendingTranscript += correctRecognizedText(transcript) + " ";
+            }
+            interruptedSeed = "";
+          }
+        }
+        if (pendingTranscript.trim()) {
+          setVoiceStatus("Речь распознана, жду окончания фразы…", "processing");
+          window.clearTimeout(silenceTimer);
+          silenceTimer = window.setTimeout(finishVoiceTurn, 1000);
+        }
+      };
+      instance.onerror = (event) => {
+        if (recognition !== instance) return;
+        if (event.error === "not-allowed" || event.error === "service-not-allowed") {
+          voiceModeActive = false;
+          voiceBusy = false;
+          recognition = null;
+          updateVoiceControls();
+          setVoiceStatus("Нет доступа к микрофону. Разреши его для этой страницы.", "error");
+        } else if (event.error !== "no-speech" && event.error !== "aborted") {
+          setVoiceStatus("Ошибка распознавания: " + event.error, "error");
+        }
+      };
+      instance.onend = () => {
+        if (recognition !== instance) return;
+        recognition = null;
+        if (voiceModeActive && !speaking && !voiceBusy) resumeVoiceMode();
+      };
+      try {
+        instance.start();
+      } catch (error) {
+        if (recognition === instance) recognition = null;
+        setVoiceStatus("Не удалось запустить микрофон: " + error.message, "error");
+        if (voiceModeActive && !voiceBusy && !speaking) {
+          recognitionResumeTimer = window.setTimeout(resumeVoiceMode, 800);
+        }
+      }
+    }, 250);
   }
 
   async function sendMessage(message, fromVoice = false) {
@@ -260,7 +323,7 @@
 
   function stopRecognition() {
     if (!recognition) return;
-    try { recognition.stop(); } catch (error) { /* It may already be stopped. */ }
+    try { recognition.abort(); } catch (error) { /* It may already be stopped. */ }
   }
 
   function finishVoiceTurn() {
@@ -276,58 +339,10 @@
 
   function startVoiceMode() {
     if (!recognitionSupported) return;
-    recognition = new SpeechRecognition();
-    recognition.lang = "ru-RU";
-    recognition.continuous = true;
-    recognition.interimResults = true;
-    recognition.maxAlternatives = 3;
-    // Experimental phrase biasing is optional; unsupported browsers ignore it.
-    if ("SpeechRecognitionPhrase" in window && "phrases" in recognition) {
-      try {
-        recognition.phrases = ["NEXUS", "Нэксус", "Нексус", "Статус", "Привет", "Перебить"]
-          .map((phrase) => new window.SpeechRecognitionPhrase(phrase, 8));
-      } catch (error) { /* Phrase biasing is not required for voice mode. */ }
-    }
-    recognition.onresult = (event) => {
-      if (speaking || voiceBusy) return;
-      for (let index = event.resultIndex; index < event.results.length; index += 1) {
-        const result = event.results[index];
-        const transcript = result[0].transcript.trim();
-        if (result.isFinal) {
-          const normalized = normalizeSpeech(transcript);
-          if (interruptedSeed && (normalized.startsWith(interruptedSeed) || interruptedSeed.startsWith(normalized))) {
-            pendingTranscript = correctRecognizedText(transcript) + " ";
-            interruptedSeed = "";
-          } else {
-            pendingTranscript += correctRecognizedText(transcript) + " ";
-            interruptedSeed = "";
-          }
-        }
-      }
-      if (pendingTranscript.trim()) {
-        setVoiceStatus("Речь распознана, жду окончания фразы…", "processing");
-        window.clearTimeout(silenceTimer);
-        silenceTimer = window.setTimeout(finishVoiceTurn, 1000);
-      }
-    };
-    recognition.onerror = (event) => {
-      if (event.error === "not-allowed" || event.error === "service-not-allowed") {
-        voiceModeActive = false;
-        voiceBusy = false;
-        updateVoiceControls();
-        setVoiceStatus("Нет доступа к микрофону. Разреши его для этой страницы.", "error");
-      } else if (event.error !== "no-speech" && event.error !== "aborted") {
-        setVoiceStatus("Ошибка распознавания: " + event.error, "error");
-      }
-    };
-    recognition.onend = () => {
-      if (!voiceModeActive) return;
-      if (!speaking && !voiceBusy) resumeVoiceMode();
-    };
     voiceModeActive = true;
     voiceBusy = false;
     updateVoiceControls();
-    setVoiceStatus("Запрашиваю доступ к микрофону…", "processing");
+    setVoiceStatus("Запускаю микрофон…", "processing");
     resumeVoiceMode();
   }
 
@@ -336,6 +351,7 @@
     voiceBusy = false;
     pendingTranscript = "";
     window.clearTimeout(silenceTimer);
+    window.clearTimeout(recognitionResumeTimer);
     stopRecognition();
     if (speechSupported) window.speechSynthesis.cancel();
     speaking = false;
