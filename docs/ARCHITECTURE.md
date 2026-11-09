@@ -33,7 +33,8 @@ The browser client is a static first-party interface served by FastAPI. It uses 
 
 - Recognition depends on browser support, microphone permission, and the browser/OS speech service. Chrome/Edge are the intended first targets; availability must be tested on the actual device.
 - The browser tab must remain active for reliable operation. Background/mobile behavior varies.
-- Recognition pauses while NEXUS speaks, preventing its own speech from being fed back into recognition. Voice interruption/barge-in is not implemented in this first pass.
+- During playback, recognition is restarted for best-effort voice interruption. Interim transcripts that strongly overlap the current assistant utterance are treated as likely echo; a dissimilar transcript interrupts playback and becomes the next user turn.
+- A visible «Перебить» control provides manual interruption. Browser-native recognition does not expose reliable acoustic echo cancellation or speaker identity, so voice barge-in can still false-trigger or miss speech depending on browser, microphone, speakers, and room acoustics.
 - A browser-native speech service may process microphone audio outside the local FastAPI process. This is not a server-side/local-only speech recognition guarantee.
 - Speech synthesis quality and available Russian voices depend on the browser and installed operating-system voices.
 - Voice I/O does not add generative intelligence. Without LLM_MODEL, the built-in handler remains deterministic and limited.
@@ -73,4 +74,4 @@ Keep orchestration and inference separate so compute can move without rewriting 
 
 ## Verification status
 
-Voice mode is implemented in the browser assets and has a static asset test. Actual microphone permission, speech recognition, turn-taking, and playback still require local browser verification.
+The owner confirmed hands-free voice mode works locally on 2026-11-09. Best-effort voice interruption and the manual «Перебить» control are implemented in the browser assets with static tests; acoustic interruption behavior still requires local verification.
