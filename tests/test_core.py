@@ -88,3 +88,16 @@ def test_web_chat_includes_hands_free_voice_controls():
     assert "recognition.continuous = true" in script.text
     assert "finishVoiceTurn" in script.text
     assert "resumeVoiceMode" in script.text
+
+
+def test_voice_interruption_controls_are_present():
+    client = TestClient(main.app)
+    page = client.get("/")
+    script = client.get("/static/app.js")
+
+    assert page.status_code == 200
+    assert 'id="voice-interrupt"' in page.text
+    assert script.status_code == 200
+    assert "interruptSpeech" in script.text
+    assert "likelyAssistantEcho" in script.text
+    assert "startRecognitionDuringSpeech" in script.text
