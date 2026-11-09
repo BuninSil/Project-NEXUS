@@ -22,7 +22,7 @@ The long-term target is a local-first personal AI companion with native language
 
 ## Voice-mode scope and limitations
 
-The hands-free implementation uses browser-native SpeechRecognition (including the Chromium webkit-prefixed implementation) and SpeechSynthesis. It is intended for an active browser tab. Recognition support, microphone permission, network/browser speech service availability, and installed voices vary by browser and operating system. v0.4.1 adds best-effort recognition during playback, a manual interruption control, echo-overlap filtering, conservative phrase detection, Russian pronunciation hints for the product name, and optional browser phrase biasing. Reliable acoustic echo cancellation, perfect ASR, and background listening are not guaranteed.
+The hands-free implementation uses browser-native SpeechRecognition (including the Chromium webkit-prefixed implementation) and SpeechSynthesis. It is intended for an active browser tab. Recognition support, microphone permission, network/browser speech service availability, and installed voices vary by browser and operating system. v0.4.1 adds a manual interruption control, Russian pronunciation hints for the product name, and optional browser phrase biasing. Recognition is paused during TTS to prevent self-triggering feedback. Voice barge-in is deferred until a dedicated audio-capture/VAD path with echo cancellation can be built and tested.
 
 ## Learning and safety gates
 
@@ -35,4 +35,4 @@ The hands-free implementation uses browser-native SpeechRecognition (including t
 
 ## Immediate next milestone
 
-Run \`pytest -q\`, restart the local server, and verify v0.4.1 in Chrome or Edge: check the spoken «нэ́ксус» pronunciation, interrupt playback by voice and with the «Перебить» button, test false-trigger/echo behavior, and confirm listening resumes. Record the actual result before marking voice interruption verified. After that, prioritize durable memory; do not confuse voice I/O with language intelligence.
+Run \`pytest -q\`, restart the local server, and verify v0.4.1 in Chrome or Edge: check the spoken «нэ́ксус» pronunciation, interrupt playback with the «Перебить» button and confirm listening resumes. Voice interruption by spoken words is intentionally disabled to prevent feedback loops; it requires a separate echo-cancelled audio pipeline. Record the actual result before marking voice interruption verified. After that, prioritize durable memory; do not confuse voice I/O with language intelligence.
