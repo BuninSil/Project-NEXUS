@@ -212,6 +212,7 @@
   }
 
   function finishVoiceTurn() {
+    if (voiceBusy) return;
     const message = pendingTranscript.trim();
     pendingTranscript = "";
     if (!message || !voiceModeActive) return;
@@ -229,6 +230,7 @@
     recognition.interimResults = false;
     recognition.maxAlternatives = 1;
     recognition.onresult = (event) => {
+      if (voiceBusy) return;
       for (let index = event.resultIndex; index < event.results.length; index += 1) {
         if (event.results[index].isFinal) pendingTranscript += event.results[index][0].transcript + " ";
       }
