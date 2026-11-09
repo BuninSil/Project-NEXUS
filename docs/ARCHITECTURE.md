@@ -45,7 +45,7 @@ The browser client is a static first-party interface served by FastAPI. It uses 
 
 - Identity and policy: stable NEXUS identity, user preferences, instruction hierarchy, and permission checks.
 - Conversation and context: sessions, message history, context selection, and model-independent orchestration.
-- Memory: current v0.3 implements manually approved durable records and CRUD/export; relevance ranking and consent-gated injection into model context remain future work.
+- Memory: v0.3 manually approved durable records and CRUD/export are owner-verified locally. Relevance ranking and bounded injection of explicitly saved records into model context remain the next increment; automatic extraction is not enabled.
 - Knowledge/research: source index, timestamps, claims, deduplication, freshness and confidence metadata.
 - Planner and task runtime: explicit task states, resumability, schedules, budgets, and cancellation.
 - Tool registry: allowlisted capabilities with scoped permissions, schemas, logs, and confirmation requirements.
@@ -76,5 +76,5 @@ Keep orchestration and inference separate so compute can move without rewriting 
 
 ## Verification status
 
-- Durable memory API and browser management panel are implemented, with regression tests added; local runtime verification is pending.
+- Durable memory API and browser management panel are implemented and owner-confirmed working locally on 2026-11-09. The exact pytest summary was not provided; do not invent a test count.
 - Voice mode is implemented in the browser assets and has a static asset test. Actual microphone permission, speech recognition, turn-taking, and playback still require local browser verification.
