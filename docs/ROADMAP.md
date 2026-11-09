@@ -15,13 +15,14 @@ The long-term target is a local-first personal AI companion with native language
 - [ ] v0.8 Native language-model research: compact Transformer experiments, curated datasets, reproducible training, benchmark evaluation, and inference optimization. Frontier-LLM parity is not promised.
 - [ ] v0.9 Companion experience: stable identity/personality configuration, user-controlled memory lifecycle, expanded web/phone client, and mature bidirectional voice adapters.
 - [x] v0.3.1 Voice output: browser speech synthesis, Russian voice selection, per-message playback, automatic playback toggle, and graceful fallback; owner confirmed playback works.
-- [ ] v0.4 Voice conversation: browser microphone recognition, automatic turn detection, spoken responses, and automatic return to listening. Current implementation is committed but awaiting local browser/runtime verification.
+- [x] v0.4 Voice conversation: browser microphone recognition, automatic turn detection, spoken responses, and automatic return to listening; owner confirmed local operation on 2026-11-09.
+- [ ] v0.4.1 Voice interruption: manual interruption control and best-effort voice barge-in implemented; verify real microphone behavior and tune false-positive handling.
 - [ ] v1.0 Personal agent release: integrated memory, research, bounded computer agency, offline/core fallback, documentation, backups, and security review.
 - [ ] Later: VPS and continuous operation with authentication, monitoring, backups, and resource controls.
 
 ## Voice-mode scope and limitations
 
-The first hands-free implementation uses browser-native SpeechRecognition (including the Chromium webkit-prefixed implementation) and SpeechSynthesis. It is intended for an active browser tab. Recognition support, microphone permission, network/browser speech service availability, and installed voices vary by browser and operating system. The first version pauses recognition while NEXUS speaks to avoid transcribing its own output; interruption/barge-in and reliable background listening are not included.
+The first hands-free implementation uses browser-native SpeechRecognition (including the Chromium webkit-prefixed implementation) and SpeechSynthesis. It is intended for an active browser tab. Recognition support, microphone permission, network/browser speech service availability, and installed voices vary by browser and operating system. The initial v0.4 version paused recognition during speech. v0.4.1 adds best-effort recognition during playback, echo-overlap filtering, and a manual interruption control. Reliable acoustic echo cancellation and background listening are not guaranteed.
 
 ## Learning and safety gates
 
