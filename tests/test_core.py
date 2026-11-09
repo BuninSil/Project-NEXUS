@@ -85,7 +85,7 @@ def test_web_chat_includes_hands_free_voice_controls():
     assert 'id="voice-status"' in page.text
     assert script.status_code == 200
     assert "SpeechRecognition" in script.text
-    assert "recognition.continuous = true" in script.text
+    assert "instance.continuous = true" in script.text
     assert "finishVoiceTurn" in script.text
     assert "resumeVoiceMode" in script.text
 
