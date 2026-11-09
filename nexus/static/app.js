@@ -15,6 +15,16 @@
   const voiceStop = document.getElementById("voice-stop");
   const voiceModeToggle = document.getElementById("voice-mode-toggle");
   const voiceStatus = document.getElementById("voice-status");
+  const memoryOpen = document.getElementById("memory-open");
+  const memoryOverlay = document.getElementById("memory-overlay");
+  const memoryClose = document.getElementById("memory-close");
+  const memoryForm = document.getElementById("memory-create-form");
+  const memoryContent = document.getElementById("memory-content");
+  const memoryCategory = document.getElementById("memory-category");
+  const memorySearch = document.getElementById("memory-search");
+  const memoryList = document.getElementById("memory-list");
+  const memoryStatus = document.getElementById("memory-status");
+  const memoryExport = document.getElementById("memory-export");
   let voiceEnabled = localStorage.getItem(VOICE_STORAGE_KEY) === "true";
   const speechSupported = "speechSynthesis" in window && "SpeechSynthesisUtterance" in window;
   const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -34,6 +44,101 @@
   }
 
   localStorage.setItem(STORAGE_KEY, conversationId);
+
+  function setMemoryStatus(message, isError = false) {
+    memoryStatus.textContent = message;
+    memoryStatus.dataset.state = isError ? "error" : "ok";
+  }
+
+  function memoryCategoryLabel(category) {
+    return ({
+      fact: "Факт", preference: "Предпочтение", goal: "Цель",
+      project: "Проект", procedure: "Инструкция", other: "Другое"
+    })[category] || category;
+  }
+
+  function renderMemories(items) {
+    memoryList.replaceChildren();
+    if (!items.length) {
+      const empty = document.createElement("p");
+      empty.className = "memory-empty";
+      empty.textContent = "Пока здесь пусто. Добавь первую подтверждённую запись.";
+      memoryList.append(empty);
+      return;
+    }
+    for (const item of items) {
+      const card = document.createElement("article");
+      card.className = "memory-item";
+      const content = document.createElement("p");
+      content.className = "memory-item-content";
+      content.textContent = item.content;
+      const meta = document.createElement("div");
+      meta.className = "memory-item-meta";
+      meta.textContent = memoryCategoryLabel(item.category) + " · " +
+        new Date(item.updated_at).toLocaleString("ru-RU");
+      const actions = document.createElement("div");
+      actions.className = "memory-item-actions";
+      const edit = document.createElement("button");
+      edit.type = "button";
+      edit.textContent = "Изменить";
+      edit.addEventListener("click", async () => {
+        const revised = window.prompt("Исправить запись памяти:", item.content);
+        if (revised === null || !revised.trim()) return;
+        try {
+          const response = await fetch("/memory/" + item.id, {
+            method: "PUT",
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify({content: revised.trim()})
+          });
+          if (!response.ok) throw new Error("HTTP " + response.status);
+          await loadMemories();
+          setMemoryStatus("Запись обновлена.");
+        } catch (error) { setMemoryStatus("Не удалось обновить запись: " + error.message, true); }
+      });
+      const remove = document.createElement("button");
+      remove.type = "button";
+      remove.className = "memory-delete";
+      remove.textContent = "Удалить";
+      remove.addEventListener("click", async () => {
+        if (!window.confirm("Удалить эту запись из памяти NEXUS?")) return;
+        try {
+          const response = await fetch("/memory/" + item.id, {method: "DELETE"});
+          if (!response.ok) throw new Error("HTTP " + response.status);
+          await loadMemories();
+          setMemoryStatus("Запись удалена.");
+        } catch (error) { setMemoryStatus("Не удалось удалить запись: " + error.message, true); }
+      });
+      actions.append(edit, remove);
+      card.append(content, meta, actions);
+      memoryList.append(card);
+    }
+  }
+
+  async function loadMemories(query = memorySearch.value.trim()) {
+    try {
+      const params = new URLSearchParams({limit: "500"});
+      if (query) params.set("query", query);
+      const response = await fetch("/memory?" + params.toString());
+      if (!response.ok) throw new Error("HTTP " + response.status);
+      const payload = await response.json();
+      renderMemories(payload.items);
+      setMemoryStatus("Записей в памяти: " + payload.items.length);
+    } catch (error) {
+      setMemoryStatus("Не удалось загрузить память: " + error.message, true);
+    }
+  }
+
+  function openMemoryPanel() {
+    memoryOverlay.hidden = false;
+    memorySearch.value = "";
+    loadMemories("");
+    memoryContent.focus();
+  }
+
+  function closeMemoryPanel() {
+    memoryOverlay.hidden = true;
+    memoryOpen.focus();
+  }
 
   function updateConversationLabel() {
     conversationLabel.textContent = conversationId.slice(0, 8) + "…";
@@ -394,6 +499,52 @@
       resumeVoiceMode();
     }
   });
+  memoryOpen.addEventListener("click", openMemoryPanel);
+  memoryClose.addEventListener("click", closeMemoryPanel);
+  memoryOverlay.addEventListener("click", (event) => {
+    if (event.target === memoryOverlay) closeMemoryPanel();
+  });
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape" && !memoryOverlay.hidden) closeMemoryPanel();
+  });
+  memoryForm.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    const content = memoryContent.value.trim();
+    if (!content) return;
+    try {
+      const response = await fetch("/memory", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({content, category: memoryCategory.value, source: "owner-confirmed"})
+      });
+      if (!response.ok) {
+        const payload = await response.json();
+        throw new Error(payload.detail || ("HTTP " + response.status));
+      }
+      memoryContent.value = "";
+      await loadMemories();
+      setMemoryStatus("Запись сохранена в долговременную память.");
+    } catch (error) { setMemoryStatus("Не удалось сохранить запись: " + error.message, true); }
+  });
+  memorySearch.addEventListener("keydown", (event) => {
+    if (event.key === "Enter") { event.preventDefault(); loadMemories(); }
+  });
+  memoryExport.addEventListener("click", async () => {
+    try {
+      const response = await fetch("/memory/export");
+      if (!response.ok) throw new Error("HTTP " + response.status);
+      const payload = await response.json();
+      const blob = new Blob([JSON.stringify(payload, null, 2)], {type: "application/json"});
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = "nexus-memory-export.json";
+      link.click();
+      URL.revokeObjectURL(url);
+      setMemoryStatus("Экспорт памяти подготовлен.");
+    } catch (error) { setMemoryStatus("Не удалось экспортировать память: " + error.message, true); }
+  });
+
   newChatButton.addEventListener("click", () => {
     conversationId = makeConversationId();
     localStorage.setItem(STORAGE_KEY, conversationId);
