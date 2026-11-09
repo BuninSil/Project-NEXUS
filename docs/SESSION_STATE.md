@@ -6,7 +6,7 @@
 
 - Repository: https://github.com/BuninSil/Project-NEXUS
 - Default branch: main
-- Current stage: **v0.4 hands-free browser voice implemented, local runtime verification pending**
+- Current stage: **v0.3 durable-memory API and browser management panel implemented, local runtime verification pending**
 - Product target: personal evolving AI companion; see PROJECT_SPEC.md.
 
 ## Confirmed by owner on 2026-11-09
@@ -28,6 +28,8 @@ The hardware model used for this run was not confirmed; do not label it as an HP
 - Viewport-pinned chat layout: the top bar, conversation/voice controls, sidebar actions, and message composer stay visible; only the message history scrolls. Uses dynamic viewport height for mobile browser chrome/keyboard changes.
 - UI sends messages to the existing API, restores up to 100 recent messages for its active conversation, starts a new conversation, and displays core/model status.
 - SQLite conversation history.
+- Separate durable-memory storage in SQLite with explicit create, list/search, update, delete, and JSON export operations. Memory records retain category, source/provenance, confidence, and timestamps.
+- Browser memory manager: manual entry, category selection, search, edit, delete, and JSON export. No automatic extraction from conversations.
 - Built-in deterministic handler: /help, /status, and an honest no-model response for other messages.
 - Optional OpenAI-compatible adapter remains available when LLM_MODEL is configured.
 - Browser-native Russian speech synthesis, per-message playback, automatic speech toggle, and stop control.
@@ -43,7 +45,7 @@ The hardware model used for this run was not confirmed; do not label it as an HP
 - Actual microphone permission, speech recognition service availability, turn detection, playback handoff, and repeated listen/respond cycles remain unverified.
 - Voice interruption/barge-in is not implemented; recognition pauses during NEXUS speech to avoid feedback.
 - Reliable background-tab/mobile recognition is not guaranteed.
-- Durable semantic/user-approved memory. SQLite currently stores conversation messages only.
+- Automatic memory extraction and relevance-ranked memory retrieval into conversation context are not implemented. Memory records are currently managed explicitly by the owner.
 - Internet research/indexing pipeline.
 - Native language model or training pipeline.
 - Agent planner and computer-control tools.
@@ -60,13 +62,13 @@ The hardware model used for this run was not confirmed; do not label it as an HP
 - Agent tools must be allowlisted, scoped, logged, cancellable, and require approval for consequential actions.
 - Never claim an unverified feature works.
 
-## Current task: finish local voice and pronunciation verification
+## Current task: verify v0.3 durable memory locally
 
-1. In the browser, enable speech output and ask NEXUS to say its name, technical terms (API, SQLite, Python, GitHub), and several stress-sensitive Russian words (звонит, договор, каталог).
-2. Confirm whether the selected Russian voice respects the inserted stress marks. Different browser/OS voices may ignore them.
-3. Test hands-free mode in Chrome or Edge: grant microphone access, speak a short phrase, wait for NEXUS to answer aloud, and confirm it resumes listening. Repeat for at least two turns, then stop the mode.
-4. Record mispronounced words and any exact browser recognition errors. Do not mark voice mode verified until the complete cycle succeeds.
-5. After voice checks, begin the durable-memory milestone: inspect the current SQLite schema and design user-approved memory with provenance, retrieval, correction, export/delete controls, and isolation tests.
+1. Run \`Start-NEXUS.bat\` and record the exact pytest result.
+2. Open the «Память NEXUS» panel. Add a harmless test record, search for it, edit it, export JSON, and delete it.
+3. Restart the server and confirm a saved test record persists until deleted; confirm existing conversation history remains intact.
+4. Record any exact errors. Do not mark v0.3 verified until the full workflow succeeds.
+5. Then finish Russian pronunciation and hands-free voice checks. Automatic memory extraction and consent-gated context retrieval are separate follow-up tasks.
 
 ## Previous task: local verification of v0.4 voice mode
 
@@ -86,6 +88,8 @@ The hardware model used for this run was not confirmed; do not label it as an HP
 - v0.2.1 browser UI: owner confirmed on 2026-11-09 that the interface works.
 - Viewport-pinned controls: owner confirmed on 2026-11-09 that the layout behaves normally and all controls stay visible.
 - Latest local startup: owner reported 9 tests passed, 1 Starlette deprecation warning, Uvicorn started, and initial GET/POST requests returned 200 OK.
+- Viewport-pinned controls: owner confirmed the interface behaves normally and all controls stay visible.
+- v0.3 durable memory: API, SQLite storage, browser management panel, and regression tests committed; local workflow and updated test suite are not yet verified.
 - v0.3.1 speech output: owner confirmed on 2026-11-09 that speech playback works.
 - v0.4 hands-free voice: code and static test committed; runtime verification pending.
 
