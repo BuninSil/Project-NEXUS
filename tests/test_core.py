@@ -101,3 +101,14 @@ def test_voice_interruption_controls_are_present():
     assert "interruptSpeech" in script.text
     assert "likelyAssistantEcho" in script.text
     assert "startRecognitionDuringSpeech" in script.text
+    assert "isLikelyUserInterruption" in script.text
+    assert "SpeechRecognitionPhrase" in script.text
+
+
+def test_speech_output_uses_russian_pronunciation_for_nexus():
+    client = TestClient(main.app)
+    script = client.get("/static/app.js")
+
+    assert script.status_code == 200
+    assert "prepareSpeechText" in script.text
+    assert "нэ́ксус" in script.text
