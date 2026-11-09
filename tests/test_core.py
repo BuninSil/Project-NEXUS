@@ -102,6 +102,7 @@ def test_voice_interruption_controls_are_present():
     assert "likelyAssistantEcho" in script.text
     assert "startRecognitionDuringSpeech" in script.text
     assert "isLikelyUserInterruption" in script.text
+    assert "correctRecognizedText" in script.text
     assert "SpeechRecognitionPhrase" in script.text
 
 
