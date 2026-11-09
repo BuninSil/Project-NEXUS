@@ -29,7 +29,8 @@ The hardware model used for this run was not confirmed; do not label it as an HP
 - UI sends messages to the existing API, restores up to 100 recent messages for its active conversation, starts a new conversation, and displays core/model status.
 - SQLite conversation history.
 - Separate durable-memory storage in SQLite with explicit create, list/search, update, delete, and JSON export operations. Memory records retain category, source/provenance, confidence, and timestamps.
-- Browser memory manager: manual entry, category selection, search, edit, delete, and JSON export. No automatic extraction from conversations.
+- Browser memory manager currently offers manual entry, category selection, search, edit, delete, and JSON export. Treat it as an administrative/diagnostic interface, not the intended routine workflow.
+- Owner clarified on 2026-11-09 that NEXUS itself must autonomously decide what to remember, update, consolidate, and let expire; the owner should not manually maintain memory entries.
 - Built-in deterministic handler: /help, /status, and an honest no-model response for other messages.
 - Optional OpenAI-compatible adapter remains available when LLM_MODEL is configured.
 - Browser-native Russian speech synthesis, per-message playback, automatic speech toggle, and stop control.
@@ -45,7 +46,7 @@ The hardware model used for this run was not confirmed; do not label it as an HP
 - Actual microphone permission, speech recognition service availability, turn detection, playback handoff, and repeated listen/respond cycles remain unverified.
 - Voice interruption/barge-in is not implemented; recognition pauses during NEXUS speech to avoid feedback.
 - Reliable background-tab/mobile recognition is not guaranteed.
-- Automatic memory extraction and relevance-ranked memory retrieval into conversation context are not implemented. Memory records are currently managed explicitly by the owner.
+- Autonomous memory extraction, confidence scoring, consolidation, conflict handling, expiry, and relevance-ranked retrieval into conversation context are not implemented. The current manual CRUD panel is only a storage/administration foundation and must not define the intended product behavior.
 - Internet research/indexing pipeline.
 - Native language model or training pipeline.
 - Agent planner and computer-control tools.
@@ -72,7 +73,7 @@ The hardware model used for this run was not confirmed; do not label it as an HP
 6. Repeat for at least two turns, then click «Завершить голосовой режим» and confirm the microphone stops.
 7. If recognition fails, capture the exact browser status/error and check site microphone permission. Do not mark voice mode verified until the complete cycle succeeds.
 
-After voice verification, implement relevance-ranked retrieval of explicitly saved memories and carefully scoped context injection. Do not add automatic extraction.
+After voice verification, implement the autonomous memory lifecycle: identify useful facts/preferences/project updates from ordinary dialogue and tasks, score confidence and sensitivity, store or consolidate records, resolve clear updates, ask only about material ambiguity/conflicts, expire stale transient facts, and retrieve relevant memories for context. Keep model-weight training separate and opt-in. The owner should not need to manually create routine memory entries.
 
 ## Previous task: local verification of v0.4 voice mode
 
@@ -93,7 +94,7 @@ After voice verification, implement relevance-ranked retrieval of explicitly sav
 - Viewport-pinned controls: owner confirmed on 2026-11-09 that the layout behaves normally and all controls stay visible.
 - Latest local startup: owner reported 9 tests passed, 1 Starlette deprecation warning, Uvicorn started, and initial GET/POST requests returned 200 OK.
 - Viewport-pinned controls: owner confirmed the interface behaves normally and all controls stay visible.
-- v0.3 durable memory: owner confirmed on 2026-11-09 that the implemented memory workflow works locally. The exact pytest summary was not included in the confirmation and is not recorded as a specific test count.
+- v0.3 memory storage/administration: owner confirmed on 2026-11-09 that the current storage and browser workflow works locally. This verifies the CRUD foundation only, not the intended autonomous memory behavior. The exact pytest summary was not included.
 - v0.3.1 speech output: owner confirmed on 2026-11-09 that speech playback works.
 - v0.4 hands-free voice: code and static test committed; runtime verification pending.
 
