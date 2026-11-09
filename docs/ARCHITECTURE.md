@@ -1,4 +1,4 @@
-# NEXUS architecture (v0.2.1 browser chat)
+# NEXUS architecture (browser chat and hands-free voice)
 
 ## Product direction
 
@@ -8,17 +8,15 @@ The detailed product vision and constraints are documented in PROJECT_SPEC.md an
 
 ## Architectural rule: core does not depend on an LLM
 
-The current path is:
+Current text path:
 
-Browser UI -> same-origin FastAPI API -> Chat orchestration -> deterministic built-in handler OR optional model adapter -> SQLite history
+Browser UI -> same-origin FastAPI API -> chat orchestration -> deterministic built-in handler OR optional model adapter -> SQLite history
 
-The intended long-term architecture is:
+Voice path:
 
-Interfaces -> Core orchestration -> Memory / Knowledge / Planner / Tools
-           -> Native language intelligence (future)
-           -> Optional external model adapters
+Browser microphone -> browser SpeechRecognition -> same-origin POST /chat -> existing chat orchestration -> reply -> browser SpeechSynthesis
 
-The browser client is a static first-party interface served by FastAPI. It uses the existing API; it does not contain business logic or connect to the database directly. The UI can be replaced without changing the core.
+The browser client is a static first-party interface served by FastAPI. It uses the existing API; it does not contain business logic or connect to the database directly. Voice input is an interface adapter and does not change the core API or add a server-side audio dependency.
 
 ## Current implemented foundation
 
@@ -27,9 +25,18 @@ The browser client is a static first-party interface served by FastAPI. It uses 
 - SQLite conversation history; the browser stores only its current conversation identifier in localStorage.
 - Deterministic built-in handler with /help, /status, and an explicit no-model response for other messages.
 - Optional OpenAI-compatible model adapter selected when LLM_MODEL is configured.
-- The interface restores the latest 100 messages for the current conversation and can start a fresh conversation.\n- Browser-native speech synthesis can read assistant replies aloud in Russian; users can play individual messages, enable automatic speech, or stop playback. No server-side audio service or external dependency is required.
+- The interface restores the latest 100 messages for the current conversation and can start a fresh conversation.
+- Browser-native speech synthesis can read assistant replies aloud in Russian; users can play individual messages or enable automatic playback.
+- Hands-free voice mode uses browser SpeechRecognition, including the webkit-prefixed Chromium API, with Russian recognition, continuous listening, a one-second pause-based end-of-turn trigger, POST /chat submission, spoken response, and automatic listening resumption.
 
-The built-in handler is deliberately limited. It is not a language model and does not provide open-ended reasoning or general knowledge. The interface does not change that limitation. Speech synthesis only reads the generated reply aloud; it does not add language intelligence or microphone input. Voice availability and voice quality depend on the browser and installed operating-system voices.
+## Voice-mode limitations
+
+- Recognition depends on browser support, microphone permission, and the browser/OS speech service. Chrome/Edge are the intended first targets; availability must be tested on the actual device.
+- The browser tab must remain active for reliable operation. Background/mobile behavior varies.
+- Recognition pauses while NEXUS speaks, preventing its own speech from being fed back into recognition. Voice interruption/barge-in is not implemented in this first pass.
+- A browser-native speech service may process microphone audio outside the local FastAPI process. This is not a server-side/local-only speech recognition guarantee.
+- Speech synthesis quality and available Russian voices depend on the browser and installed operating-system voices.
+- Voice I/O does not add generative intelligence. Without LLM_MODEL, the built-in handler remains deterministic and limited.
 
 ## Core subsystems (future scope)
 
@@ -57,6 +64,7 @@ Keep orchestration and inference separate so compute can move without rewriting 
 ## Trust and security boundaries
 
 - The initial web interface is served on the same origin as the API; keep the local server bound to loopback unless authenticated remote access is implemented.
+- Microphone access is opt-in through an explicit user action and browser permission; the UI provides a clear way to stop the session.
 - .env, databases, private memory, logs, and credentials are excluded from Git.
 - External pages and documents are untrusted; defend against prompt injection and preserve source provenance.
 - Never expose unrestricted shell, filesystem, browser, or credentials to a model.
@@ -65,4 +73,4 @@ Keep orchestration and inference separate so compute can move without rewriting 
 
 ## Verification status
 
-The owner confirmed the Windows first boot, dependency installation, five passing tests, and Uvicorn startup on 2026-11-09. The browser interface has been implemented in this commit; its local runtime check is still pending.
+Voice mode is implemented in the browser assets and has a static asset test. Actual microphone permission, speech recognition, turn-taking, and playback still require local browser verification.
