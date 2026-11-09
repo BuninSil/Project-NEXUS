@@ -50,11 +50,18 @@
     voiceStatus.dataset.state = state || "idle";
   }
 
+  function prepareSpeechText(content) {
+    return content
+      .replace(/\bNEXUS\b/gi, "нэ́ксус")
+      .replace(/\bНексус\b/gi, "нэ́ксус");
+  }
+
   function speakText(content, onFinished) {
     if (!speechSupported || !content) return false;
     window.speechSynthesis.cancel();
-    currentSpeechText = content;
-    const utterance = new SpeechSynthesisUtterance(content);
+    const spokenContent = prepareSpeechText(content);
+    currentSpeechText = spokenContent;
+    const utterance = new SpeechSynthesisUtterance(spokenContent);
     utterance.lang = "ru-RU";
     utterance.rate = 0.98;
     const russianVoice = window.speechSynthesis.getVoices().find((voice) => voice.lang.toLowerCase().startsWith("ru"));
@@ -223,7 +230,22 @@
   }
 
   function normalizeSpeech(value) {
-    return value.toLocaleLowerCase("ru-RU").replace(/[^\p{L}\p{N}\s]/gu, " ").replace(/\s+/g, " ").trim();
+    return value.toLocaleLowerCase("ru-RU")
+      .replace(/\bнехус\b|\bнехуз\b|\bнехоз\b/gu, "nexus")
+      .replace(/\bнехуй(?=\s+(?:получил|получает|сообщение)\b)/gu, "nexus")
+      .replace(/[^\p{L}\p{N}\s]/gu, " ")
+      .replace(/\s+/g, " ")
+      .trim();
+  }
+
+  function isLikelyUserInterruption(transcript, confidence) {
+    const normalized = normalizeSpeech(transcript);
+    if (!normalized) return false;
+    const urgentCommands = new Set(["стоп", "хватит", "подожди", "перебей", "секунду", "стой"]);
+    if (normalized.split(" ").some((word) => urgentCommands.has(word))) return true;
+    const words = normalized.split(" ").filter((word) => word.length > 2);
+    if (words.length < 2 || normalized.length < 7) return false;
+    return typeof confidence !== "number" || confidence >= 0.45;
   }
 
   function likelyAssistantEcho(transcript) {
@@ -277,14 +299,21 @@
     recognition.lang = "ru-RU";
     recognition.continuous = true;
     recognition.interimResults = true;
-    recognition.maxAlternatives = 1;
+    recognition.maxAlternatives = 3;
+    // Experimental phrase biasing is optional; unsupported browsers ignore it.
+    if ("SpeechRecognitionPhrase" in window && "phrases" in recognition) {
+      try {
+        recognition.phrases = ["NEXUS", "Нэксус", "Нексус", "Статус", "Привет", "Перебить"]
+          .map((phrase) => new window.SpeechRecognitionPhrase(phrase, 8));
+      } catch (error) { /* Phrase biasing is not required for voice mode. */ }
+    }
     recognition.onresult = (event) => {
       if (voiceBusy && !speaking) return;
       let interruptedTranscript = "";
       for (let index = event.resultIndex; index < event.results.length; index += 1) {
         const result = event.results[index];
         const transcript = result[0].transcript.trim();
-        if (speaking && transcript.length >= 3 && !likelyAssistantEcho(transcript)) {
+        if (speaking && isLikelyUserInterruption(transcript, result[0].confidence) && !likelyAssistantEcho(transcript)) {
           interruptedTranscript = transcript;
           break;
         }
