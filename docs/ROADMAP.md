@@ -16,7 +16,7 @@ The long-term target is a local-first personal AI companion with native language
 - [ ] v0.9 Companion experience: stable identity/personality configuration, user-controlled memory lifecycle, expanded web/phone client, and mature bidirectional voice adapters.
 - [x] v0.3.1 Voice output: browser speech synthesis, Russian voice selection, per-message playback, automatic playback toggle, and graceful fallback; owner confirmed playback works.
 - [x] v0.4 Voice conversation: browser microphone recognition, automatic turn detection, spoken responses, and automatic return to listening; owner confirmed local operation on 2026-11-09.
-- [ ] v0.4.1 Voice interruption: manual interruption control and best-effort voice barge-in implemented; verify real microphone behavior and tune false-positive handling.
+- [ ] v0.4.1 Voice interruption and speech polish: voice/manual barge-in, echo-overlap filtering, Russian name pronunciation hints, optional phrase biasing, and common ASR name normalization implemented; local acoustic verification pending.
 - [ ] v1.0 Personal agent release: integrated memory, research, bounded computer agency, offline/core fallback, documentation, backups, and security review.
 - [ ] Later: VPS and continuous operation with authentication, monitoring, backups, and resource controls.
 
