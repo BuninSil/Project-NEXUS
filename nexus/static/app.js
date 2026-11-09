@@ -13,6 +13,7 @@
   const newChatButton = document.getElementById("new-chat");
   const voiceToggle = document.getElementById("voice-toggle");
   const voiceStop = document.getElementById("voice-stop");
+  const voiceInterrupt = document.getElementById("voice-interrupt");
   const voiceModeToggle = document.getElementById("voice-mode-toggle");
   const voiceStatus = document.getElementById("voice-status");
   let voiceEnabled = localStorage.getItem(VOICE_STORAGE_KEY) === "true";
@@ -27,6 +28,7 @@
   let speaking = false;
   let silenceTimer = null;
   let pendingTranscript = "";
+  let currentSpeechText = "";
 
   function makeConversationId() {
     if (window.crypto && typeof window.crypto.randomUUID === "function") return window.crypto.randomUUID();
@@ -50,6 +52,7 @@
   function speakText(content, onFinished) {
     if (!speechSupported || !content) return false;
     window.speechSynthesis.cancel();
+    currentSpeechText = content;
     const utterance = new SpeechSynthesisUtterance(content);
     utterance.lang = "ru-RU";
     utterance.rate = 0.98;
@@ -57,13 +60,19 @@
     if (russianVoice) utterance.voice = russianVoice;
     const finish = () => {
       speaking = false;
+      currentSpeechText = "";
       voiceStop.hidden = true;
+      voiceInterrupt.hidden = true;
       if (typeof onFinished === "function") onFinished();
     };
     speaking = true;
     utterance.onstart = () => {
       voiceStop.hidden = false;
-      if (voiceModeActive) setVoiceStatus("NEXUS отвечает…", "speaking");
+      voiceInterrupt.hidden = !voiceModeActive;
+      if (voiceModeActive) {
+        setVoiceStatus("NEXUS отвечает… Можно перебить голосом или кнопкой", "speaking");
+        startRecognitionDuringSpeech();
+      }
     };
     utterance.onend = finish;
     utterance.onerror = finish;
@@ -78,6 +87,7 @@
       ? (voiceEnabled ? "Озвучка: вкл." : "Озвучка: выкл.")
       : "Озвучка недоступна";
     voiceModeToggle.disabled = !recognitionSupported;
+    voiceInterrupt.hidden = !speaking || !voiceModeActive;
     voiceModeToggle.textContent = voiceModeActive ? "Завершить голосовой режим" : "🎙 Голосовой режим";
     voiceModeToggle.setAttribute("aria-pressed", String(voiceModeActive));
     if (!recognitionSupported) setVoiceStatus("Распознавание речи недоступно в этом браузере", "error");
@@ -151,6 +161,11 @@
     }
   }
 
+  function startRecognitionDuringSpeech() {
+    if (!voiceModeActive || !recognition) return;
+    try { recognition.start(); } catch (error) { /* It may already be listening. */ }
+  }
+
   function resumeVoiceMode() {
     if (!voiceModeActive || voiceBusy || speaking) return;
     setVoiceStatus("Слушаю…", "listening");
@@ -206,6 +221,37 @@
     }
   }
 
+  function normalizeSpeech(value) {
+    return value.toLocaleLowerCase("ru-RU").replace(/[^\\p{L}\\p{N}\\s]/gu, " ").replace(/\\s+/g, " ").trim();
+  }
+
+  function likelyAssistantEcho(transcript) {
+    const heard = normalizeSpeech(transcript).split(" ").filter((word) => word.length > 2);
+    const spoken = new Set(normalizeSpeech(currentSpeechText).split(" ").filter((word) => word.length > 2));
+    if (heard.length < 2 || !spoken.size) return false;
+    const overlap = heard.filter((word) => spoken.has(word)).length / heard.length;
+    return overlap >= 0.65;
+  }
+
+  function interruptSpeech(transcript = "") {
+    if (!speaking || !voiceModeActive) return;
+    window.speechSynthesis.cancel();
+    speaking = false;
+    voiceBusy = false;
+    currentSpeechText = "";
+    voiceStop.hidden = true;
+    voiceInterrupt.hidden = true;
+    if (transcript.trim()) {
+      pendingTranscript = transcript.trim() + " ";
+      setVoiceStatus("Перебивание распознано, жду окончания фразы…", "processing");
+      window.clearTimeout(silenceTimer);
+      silenceTimer = window.setTimeout(finishVoiceTurn, 900);
+    } else {
+      setVoiceStatus("Озвучка остановлена. Слушаю…", "listening");
+      startRecognitionDuringSpeech();
+    }
+  }
+
   function stopRecognition() {
     if (!recognition) return;
     try { recognition.stop(); } catch (error) { /* It may already be stopped. */ }
@@ -227,12 +273,23 @@
     recognition = new SpeechRecognition();
     recognition.lang = "ru-RU";
     recognition.continuous = true;
-    recognition.interimResults = false;
+    recognition.interimResults = true;
     recognition.maxAlternatives = 1;
     recognition.onresult = (event) => {
-      if (voiceBusy) return;
+      if (voiceBusy && !speaking) return;
+      let interruptedTranscript = "";
       for (let index = event.resultIndex; index < event.results.length; index += 1) {
-        if (event.results[index].isFinal) pendingTranscript += event.results[index][0].transcript + " ";
+        const result = event.results[index];
+        const transcript = result[0].transcript.trim();
+        if (speaking && transcript.length >= 3 && !likelyAssistantEcho(transcript)) {
+          interruptedTranscript = transcript;
+          break;
+        }
+        if (result.isFinal && !speaking) pendingTranscript += transcript + " ";
+      }
+      if (speaking && interruptedTranscript) {
+        interruptSpeech(interruptedTranscript);
+        return;
       }
       if (pendingTranscript.trim()) {
         setVoiceStatus("Речь распознана, жду окончания фразы…", "processing");
@@ -251,7 +308,9 @@
       }
     };
     recognition.onend = () => {
-      if (voiceModeActive && !voiceBusy && !speaking) resumeVoiceMode();
+      if (!voiceModeActive) return;
+      if (speaking) window.setTimeout(startRecognitionDuringSpeech, 250);
+      else if (!voiceBusy) resumeVoiceMode();
     };
     voiceModeActive = true;
     voiceBusy = false;
@@ -268,7 +327,9 @@
     stopRecognition();
     if (speechSupported) window.speechSynthesis.cancel();
     speaking = false;
+    currentSpeechText = "";
     voiceStop.hidden = true;
+    voiceInterrupt.hidden = true;
     updateVoiceControls();
     setVoiceStatus("Голосовой режим выключен", "idle");
   }
@@ -310,10 +371,13 @@
     if (voiceModeActive) stopVoiceMode();
     else startVoiceMode();
   });
+  voiceInterrupt.addEventListener("click", () => interruptSpeech());
   voiceStop.addEventListener("click", () => {
     if (speechSupported) window.speechSynthesis.cancel();
     speaking = false;
+    currentSpeechText = "";
     voiceStop.hidden = true;
+    voiceInterrupt.hidden = true;
     if (voiceModeActive) {
       voiceBusy = false;
       resumeVoiceMode();
