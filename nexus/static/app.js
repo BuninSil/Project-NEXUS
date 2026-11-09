@@ -53,7 +53,7 @@
   function prepareSpeechText(content) {
     return content
       .replace(/\bNEXUS\b/gi, "нэ́ксус")
-      .replace(/\bНексус\b/gi, "нэ́ксус");
+      .replace(/нексус/giu, "нэ́ксус");
   }
 
   function speakText(content, onFinished) {
@@ -231,8 +231,8 @@
 
   function normalizeSpeech(value) {
     return value.toLocaleLowerCase("ru-RU")
-      .replace(/\bнехус\b|\bнехуз\b|\bнехоз\b/gu, "nexus")
-      .replace(/\bнехуй(?=\s+(?:получил|получает|сообщение)\b)/gu, "nexus")
+      .replace(/(^|[^\p{L}\p{N}_])(нехус|нехуз|нехоз)(?=$|[^\p{L}\p{N}_])/gu, "$1nexus")
+      .replace(/(^|[^\p{L}\p{N}_])нехуй(?=\s+(?:получил|получает|сообщение)(?:\s|$))/gu, "$1nexus")
       .replace(/[^\p{L}\p{N}\s]/gu, " ")
       .replace(/\s+/g, " ")
       .trim();
