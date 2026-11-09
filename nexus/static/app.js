@@ -78,8 +78,7 @@
       voiceStop.hidden = false;
       voiceInterrupt.hidden = !voiceModeActive;
       if (voiceModeActive) {
-        setVoiceStatus("NEXUS отвечает… Можно перебить голосом или кнопкой", "speaking");
-        startRecognitionDuringSpeech();
+        setVoiceStatus("NEXUS отвечает… Для перебивания нажми кнопку", "speaking");
       }
     };
     utterance.onend = finish;
@@ -278,7 +277,7 @@
       silenceTimer = window.setTimeout(finishVoiceTurn, 1000);
     } else {
       setVoiceStatus("Озвучка остановлена. Слушаю…", "listening");
-      startRecognitionDuringSpeech();
+      resumeVoiceMode();
     }
   }
 
@@ -313,16 +312,12 @@
       } catch (error) { /* Phrase biasing is not required for voice mode. */ }
     }
     recognition.onresult = (event) => {
-      if (voiceBusy && !speaking) return;
+        if (speaking || voiceBusy) return;
       let interruptedTranscript = "";
       for (let index = event.resultIndex; index < event.results.length; index += 1) {
         const result = event.results[index];
         const transcript = result[0].transcript.trim();
-        if (speaking && isLikelyUserInterruption(transcript, result[0].confidence) && !likelyAssistantEcho(transcript)) {
-          interruptedTranscript = transcript;
-          break;
-        }
-        if (result.isFinal && !speaking) {
+        if (result.isFinal) {
           const normalized = normalizeSpeech(transcript);
           if (interruptedSeed && (normalized.startsWith(interruptedSeed) || interruptedSeed.startsWith(normalized))) {
             pendingTranscript = correctRecognizedText(transcript) + " ";
@@ -332,10 +327,6 @@
             interruptedSeed = "";
           }
         }
-      }
-      if (speaking && interruptedTranscript) {
-        interruptSpeech(interruptedTranscript);
-        return;
       }
       if (pendingTranscript.trim()) {
         setVoiceStatus("Речь распознана, жду окончания фразы…", "processing");
@@ -355,8 +346,7 @@
     };
     recognition.onend = () => {
       if (!voiceModeActive) return;
-      if (speaking) window.setTimeout(startRecognitionDuringSpeech, 250);
-      else if (!voiceBusy) resumeVoiceMode();
+      if (!speaking && !voiceBusy) resumeVoiceMode();
     };
     voiceModeActive = true;
     voiceBusy = false;
