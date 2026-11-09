@@ -33,7 +33,7 @@ The browser client is a static first-party interface served by FastAPI. It uses 
 
 - Recognition depends on browser support, microphone permission, and the browser/OS speech service. Chrome/Edge are the intended first targets; availability must be tested on the actual device.
 - The browser tab must remain active for reliable operation. Background/mobile behavior varies.
-- During playback, recognition is restarted for best-effort voice interruption. Interim transcripts that strongly overlap the current assistant utterance are treated as likely echo; a dissimilar transcript interrupts playback and becomes the next user turn.
+- A visible «Перебить» control provides manual interruption. Browser-native recognition does not expose reliable acoustic echo cancellation or speaker identity, so voice barge-in can still false-trigger or miss speech depending on browser, microphone, speakers, and room acoustics.
 - A visible «Перебить» control provides manual interruption. Browser-native recognition does not expose reliable acoustic echo cancellation or speaker identity, so voice barge-in can still false-trigger or miss speech depending on browser, microphone, speakers, and room acoustics.
 - A browser-native speech service may process microphone audio outside the local FastAPI process. This is not a server-side/local-only speech recognition guarantee.
 - Speech synthesis quality and available Russian voices depend on the browser and installed operating-system voices.
