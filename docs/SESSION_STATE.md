@@ -59,15 +59,13 @@ The hardware model used for this run was not confirmed; do not label it as an HP
 
 ## Current task: local verification of v0.4.1 voice interruption
 
-1. In PowerShell, stop the old server with Ctrl+C.
-2. Run \`Start-NEXUS.bat\` from the project folder. It should pull the latest commits, check dependencies, run tests, and start Uvicorn.
-3. Record the actual output of \`pytest -q\`; do not assume the test count or result.
-4. Open http://127.0.0.1:8000/ in current Chrome or Edge.
-5. Click «🎙 Голосовой режим» and allow microphone access.
-6. Say a short Russian phrase. After about one second of silence, it should appear in chat and be sent to the API.
-7. Confirm NEXUS speaks the reply and automatically returns to «Слушаю…».
-8. Repeat for at least two turns, then click «Завершить голосовой режим» and confirm the microphone stops.
-9. If recognition fails, capture the exact browser status/error and check site microphone permission. Do not mark v0.4 verified until the complete cycle succeeds.
+1. Stop the old server with Ctrl+C.
+2. Run `Start-NEXUS.bat`; record the actual pytest result.
+3. Open http://127.0.0.1:8000/ in Chrome or Edge and enable «🎙 Голосовой режим».
+4. Let NEXUS speak, then interrupt with a short unrelated spoken phrase. Confirm playback stops and the phrase is sent as a new turn.
+5. Repeat using the visible «Перебить» button.
+6. Note false interruptions from NEXUS hearing its own voice, or missed interruptions.
+7. Stop voice mode and confirm the microphone is released.
 
 ## Verification record
 
