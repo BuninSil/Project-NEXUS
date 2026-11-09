@@ -35,4 +35,4 @@ The hands-free implementation uses browser-native SpeechRecognition (including t
 
 ## Immediate next milestone
 
-Run \`pytest -q\`, restart the local server, and test the new hands-free voice mode in Chrome or Edge: grant microphone access, start voice mode, speak a short phrase, wait for NEXUS to answer aloud, then verify it resumes listening. Record the actual result before marking v0.4 verified. After that, prioritize durable memory; do not confuse voice I/O with language intelligence.
+Run \`pytest -q\`, restart the local server, and verify v0.4.1 in Chrome or Edge: check the spoken «нэ́ксус» pronunciation, interrupt playback by voice and with the «Перебить» button, test false-trigger/echo behavior, and confirm listening resumes. Record the actual result before marking voice interruption verified. After that, prioritize durable memory; do not confuse voice I/O with language intelligence.
