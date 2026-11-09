@@ -29,6 +29,7 @@
   let silenceTimer = null;
   let pendingTranscript = "";
   let currentSpeechText = "";
+  let interruptedSeed = "";
 
   function makeConversationId() {
     if (window.crypto && typeof window.crypto.randomUUID === "function") return window.crypto.randomUUID();
@@ -228,7 +229,8 @@
   function likelyAssistantEcho(transcript) {
     const heard = normalizeSpeech(transcript).split(" ").filter((word) => word.length > 2);
     const spoken = new Set(normalizeSpeech(currentSpeechText).split(" ").filter((word) => word.length > 2));
-    if (heard.length < 2 || !spoken.size) return false;
+    if (!heard.length || !spoken.size) return false;
+    if (heard.length === 1) return spoken.has(heard[0]);
     const overlap = heard.filter((word) => spoken.has(word)).length / heard.length;
     return overlap >= 0.65;
   }
@@ -242,10 +244,11 @@
     voiceStop.hidden = true;
     voiceInterrupt.hidden = true;
     if (transcript.trim()) {
+      interruptedSeed = normalizeSpeech(transcript);
       pendingTranscript = transcript.trim() + " ";
-      setVoiceStatus("Перебивание распознано, жду окончания фразы…", "processing");
+      setVoiceStatus("Перебивание распознано, слушаю дальше…", "listening");
       window.clearTimeout(silenceTimer);
-      silenceTimer = window.setTimeout(finishVoiceTurn, 900);
+      silenceTimer = window.setTimeout(finishVoiceTurn, 1000);
     } else {
       setVoiceStatus("Озвучка остановлена. Слушаю…", "listening");
       startRecognitionDuringSpeech();
@@ -285,7 +288,16 @@
           interruptedTranscript = transcript;
           break;
         }
-        if (result.isFinal && !speaking) pendingTranscript += transcript + " ";
+        if (result.isFinal && !speaking) {
+          const normalized = normalizeSpeech(transcript);
+          if (interruptedSeed && (normalized.startsWith(interruptedSeed) || interruptedSeed.startsWith(normalized))) {
+            pendingTranscript += transcript + " ";
+            interruptedSeed = "";
+          } else {
+            pendingTranscript += transcript + " ";
+            interruptedSeed = "";
+          }
+        }
       }
       if (speaking && interruptedTranscript) {
         interruptSpeech(interruptedTranscript);
