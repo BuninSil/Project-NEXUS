@@ -89,7 +89,7 @@ def test_web_chat_includes_hands_free_voice_controls():
     assert "finishVoiceTurn" in script.text
     assert "resumeVoiceMode" in script.text
     assert "const instance = new SpeechRecognition()" in script.text
-    assert "instance.abort()" in script.text
+    assert "recognition.abort()" in script.text
 
 
 def test_voice_interruption_controls_are_present():
