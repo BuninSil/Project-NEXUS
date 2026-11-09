@@ -95,3 +95,87 @@ def test_web_chat_includes_hands_free_voice_controls():
     assert "recognition.continuous = true" in script.text
     assert "finishVoiceTurn" in script.text
     assert "resumeVoiceMode" in script.text
+
+
+
+def test_memory_crud_search_export_and_provenance(tmp_path):
+    from nexus.database import Database
+
+    db = Database(tmp_path / "memory.sqlite3")
+    created = db.add_memory(
+        "Предпочитаю практическое обучение",
+        category="preference",
+        source="owner-confirmed",
+    )
+
+    assert created["id"] > 0
+    assert created["source"] == "owner-confirmed"
+    assert created["confidence"] == 1.0
+    assert db.list_memories(query="практическое")[0]["content"] == "Предпочитаю практическое обучение"
+
+    updated = db.update_memory(created["id"], content="Предпочитаю обучение на практике")
+    assert updated["content"] == "Предпочитаю обучение на практике"
+    assert updated["updated_at"] >= created["updated_at"]
+
+    assert db.export_memories()[0]["id"] == created["id"]
+    assert db.delete_memory(created["id"]) is True
+    assert db.get_memory(created["id"]) is None
+    assert db.delete_memory(created["id"]) is False
+
+
+def test_memory_api_requires_explicit_create_and_supports_management(monkeypatch, tmp_path):
+    from nexus.database import Database
+
+    monkeypatch.setattr(main, "database", Database(tmp_path / "api-memory.sqlite3"))
+    client = TestClient(main.app)
+
+    created = client.post(
+        "/memory",
+        json={"content": "Мой проект называется NEXUS", "category": "project"},
+    )
+    assert created.status_code == 201
+    memory_id = created.json()["id"]
+
+    listed = client.get("/memory?query=NEXUS")
+    assert listed.status_code == 200
+    assert len(listed.json()["items"]) == 1
+
+    exported = client.get("/memory/export")
+    assert exported.status_code == 200
+    assert exported.json()["format"] == "nexus-memory-v1"
+    assert len(exported.json()["items"]) == 1
+
+    updated = client.put(
+        f"/memory/{memory_id}",
+        json={"content": "Проект называется Project NEXUS"},
+    )
+    assert updated.status_code == 200
+    assert updated.json()["content"] == "Проект называется Project NEXUS"
+
+    deleted = client.delete(f"/memory/{memory_id}")
+    assert deleted.status_code == 200
+    assert deleted.json()["deleted"] is True
+    assert client.get("/memory").json()["items"] == []
+
+
+def test_memory_api_validates_blank_content_and_unknown_ids(monkeypatch, tmp_path):
+    from nexus.database import Database
+
+    monkeypatch.setattr(main, "database", Database(tmp_path / "api-memory-validation.sqlite3"))
+    client = TestClient(main.app)
+
+    assert client.post("/memory", json={"content": "   "}).status_code == 422
+    assert client.put("/memory/999", json={"content": "Updated"}).status_code == 404
+    assert client.delete("/memory/999").status_code == 404
+
+
+def test_memory_is_separate_from_conversation_history(tmp_path):
+    from nexus.database import Database
+
+    db = Database(tmp_path / "separation.sqlite3")
+    db.add_message("session-a", "user", "Remember this?")
+    db.add_memory("Confirmed fact", category="fact")
+
+    assert len(db.recent_messages("session-a")) == 1
+    assert len(db.list_memories()) == 1
+    assert db.recent_messages("session-b") == []
