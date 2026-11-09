@@ -73,3 +73,18 @@ def test_web_chat_includes_voice_controls():
     assert script.status_code == 200
     assert "speechSynthesis" in script.text
     assert "SpeechSynthesisUtterance" in script.text
+
+
+def test_web_chat_includes_hands_free_voice_controls():
+    client = TestClient(main.app)
+    page = client.get("/")
+    script = client.get("/static/app.js")
+
+    assert page.status_code == 200
+    assert 'id="voice-mode-toggle"' in page.text
+    assert 'id="voice-status"' in page.text
+    assert script.status_code == 200
+    assert "SpeechRecognition" in script.text
+    assert "recognition.continuous = true" in script.text
+    assert "finishVoiceTurn" in script.text
+    assert "resumeVoiceMode" in script.text
