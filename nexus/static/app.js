@@ -60,8 +60,8 @@
       voiceStop.hidden = true;
       if (typeof onFinished === "function") onFinished();
     };
+    speaking = true;
     utterance.onstart = () => {
-      speaking = true;
       voiceStop.hidden = false;
       if (voiceModeActive) setVoiceStatus("NEXUS отвечает…", "speaking");
     };
