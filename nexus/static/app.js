@@ -10,6 +10,11 @@
   const modePill = document.getElementById("mode-pill");
   const conversationLabel = document.getElementById("conversation-label");
   const newChatButton = document.getElementById("new-chat");
+  const voiceToggle = document.getElementById("voice-toggle");
+  const voiceStop = document.getElementById("voice-stop");
+  const VOICE_STORAGE_KEY = "nexus.voice_enabled";
+  let voiceEnabled = localStorage.getItem(VOICE_STORAGE_KEY) === "true";
+  const speechSupported = "speechSynthesis" in window && "SpeechSynthesisUtterance" in window;
 
   function makeConversationId() {
     if (window.crypto && typeof window.crypto.randomUUID === "function") {
@@ -31,6 +36,32 @@
 
   function showWelcome(show) {
     welcomeCard.hidden = !show;
+  }
+
+  function speakText(content) {
+    if (!speechSupported || !content) return;
+    window.speechSynthesis.cancel();
+    const utterance = new SpeechSynthesisUtterance(content);
+    utterance.lang = "ru-RU";
+    utterance.rate = 0.98;
+    const voices = window.speechSynthesis.getVoices();
+    const russianVoice = voices.find((voice) => voice.lang.toLowerCase().startsWith("ru"));
+    if (russianVoice) utterance.voice = russianVoice;
+    utterance.onstart = () => { voiceStop.hidden = false; };
+    utterance.onend = () => { voiceStop.hidden = true; };
+    utterance.onerror = () => { voiceStop.hidden = true; };
+    window.speechSynthesis.speak(utterance);
+  }
+
+  function updateVoiceControls() {
+    voiceToggle.disabled = !speechSupported;
+    voiceToggle.setAttribute("aria-pressed", String(voiceEnabled));
+    voiceToggle.textContent = speechSupported
+      ? (voiceEnabled ? "Озвучка: вкл." : "Озвучка: выкл.")
+      : "Озвучка недоступна";
+    voiceToggle.title = speechSupported
+      ? "Автоматически озвучивать новые ответы"
+      : "Браузер не поддерживает синтез речи";
   }
 
   function addMessage(role, content, timestamp, isError = false) {
@@ -57,6 +88,14 @@
     text.textContent = content;
 
     body.append(heading, text);
+    if (role === "assistant" && !isError && speechSupported) {
+      const speakButton = document.createElement("button");
+      speakButton.className = "speak-button";
+      speakButton.type = "button";
+      speakButton.textContent = "🔊 Слушать";
+      speakButton.addEventListener("click", () => speakText(content));
+      body.append(speakButton);
+    }
     article.append(avatar, body);
     messages.append(article);
     scrollToLatest();
@@ -150,6 +189,18 @@
     }
   });
 
+  voiceToggle.addEventListener("click", () => {
+    voiceEnabled = !voiceEnabled;
+    localStorage.setItem(VOICE_STORAGE_KEY, String(voiceEnabled));
+    updateVoiceControls();
+    if (!voiceEnabled && speechSupported) window.speechSynthesis.cancel();
+  });
+
+  voiceStop.addEventListener("click", () => {
+    if (speechSupported) window.speechSynthesis.cancel();
+    voiceStop.hidden = true;
+  });
+
   newChatButton.addEventListener("click", () => {
     conversationId = makeConversationId();
     localStorage.setItem(STORAGE_KEY, conversationId);
@@ -159,5 +210,10 @@
     input.focus();
   });
 
+  updateVoiceControls();
+  if (speechSupported) {
+    window.speechSynthesis.getVoices();
+    window.speechSynthesis.addEventListener("voiceschanged", () => window.speechSynthesis.getVoices());
+  }
   Promise.all([checkHealth(), loadHistory()]);
 })();
