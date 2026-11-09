@@ -78,6 +78,7 @@
       voiceStop.hidden = false;
       voiceInterrupt.hidden = !voiceModeActive;
       if (voiceModeActive) {
+        stopRecognition();
         setVoiceStatus("NEXUS отвечает… Для перебивания нажми кнопку", "speaking");
       }
     };
@@ -168,11 +169,6 @@
     }
   }
 
-  function startRecognitionDuringSpeech() {
-    if (!voiceModeActive || !recognition) return;
-    try { recognition.start(); } catch (error) { /* It may already be listening. */ }
-  }
-
   function resumeVoiceMode() {
     if (!voiceModeActive || voiceBusy || speaking) return;
     setVoiceStatus("Слушаю…", "listening");
@@ -241,25 +237,6 @@
       .trim();
   }
 
-  function isLikelyUserInterruption(transcript, confidence) {
-    const normalized = normalizeSpeech(transcript);
-    if (!normalized) return false;
-    const urgentCommands = new Set(["стоп", "хватит", "подожди", "перебей", "секунду", "стой"]);
-    if (normalized.split(" ").some((word) => urgentCommands.has(word))) return true;
-    const words = normalized.split(" ").filter((word) => word.length > 2);
-    if (words.length < 2 || normalized.length < 7) return false;
-    return typeof confidence !== "number" || confidence >= 0.45;
-  }
-
-  function likelyAssistantEcho(transcript) {
-    const heard = normalizeSpeech(transcript).split(" ").filter((word) => word.length > 2);
-    const spoken = new Set(normalizeSpeech(currentSpeechText).split(" ").filter((word) => word.length > 2));
-    if (!heard.length || !spoken.size) return false;
-    if (heard.length === 1) return spoken.has(heard[0]);
-    const overlap = heard.filter((word) => spoken.has(word)).length / heard.length;
-    return overlap >= 0.65;
-  }
-
   function interruptSpeech(transcript = "") {
     if (!speaking || !voiceModeActive) return;
     window.speechSynthesis.cancel();
@@ -312,8 +289,7 @@
       } catch (error) { /* Phrase biasing is not required for voice mode. */ }
     }
     recognition.onresult = (event) => {
-        if (speaking || voiceBusy) return;
-      let interruptedTranscript = "";
+      if (speaking || voiceBusy) return;
       for (let index = event.resultIndex; index < event.results.length; index += 1) {
         const result = event.results[index];
         const transcript = result[0].transcript.trim();
