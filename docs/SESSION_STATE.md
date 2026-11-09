@@ -6,7 +6,7 @@
 
 - Repository: https://github.com/BuninSil/Project-NEXUS
 - Default branch: main
-- Current stage: **v0.3 durable-memory API and browser management panel implemented, local runtime verification pending**
+- Current stage: **v0.3 durable-memory API and browser management panel verified by owner; context retrieval/injection remains next memory task**
 - Product target: personal evolving AI companion; see PROJECT_SPEC.md.
 
 ## Confirmed by owner on 2026-11-09
@@ -62,13 +62,17 @@ The hardware model used for this run was not confirmed; do not label it as an HP
 - Agent tools must be allowlisted, scoped, logged, cancellable, and require approval for consequential actions.
 - Never claim an unverified feature works.
 
-## Current task: verify v0.3 durable memory locally
+## Current task: verify hands-free voice locally
 
-1. Run \`Start-NEXUS.bat\` and record the exact pytest result.
-2. Open the «Память NEXUS» panel. Add a harmless test record, search for it, edit it, export JSON, and delete it.
-3. Restart the server and confirm a saved test record persists until deleted; confirm existing conversation history remains intact.
-4. Record any exact errors. Do not mark v0.3 verified until the full workflow succeeds.
-5. Then finish Russian pronunciation and hands-free voice checks. Automatic memory extraction and consent-gated context retrieval are separate follow-up tasks.
+1. Run \`Start-NEXUS.bat\` and record the exact pytest result; the owner confirmed the latest memory workflow works, but did not provide the exact test summary.
+2. Open http://127.0.0.1:8000/ in current Chrome or Edge.
+3. Click «🎙 Голосовой режим» and allow microphone access.
+4. Say a short Russian phrase. After about one second of silence, it should appear in chat and be sent to the API.
+5. Confirm NEXUS speaks the reply and automatically returns to «Слушаю…».
+6. Repeat for at least two turns, then click «Завершить голосовой режим» and confirm the microphone stops.
+7. If recognition fails, capture the exact browser status/error and check site microphone permission. Do not mark voice mode verified until the complete cycle succeeds.
+
+After voice verification, implement relevance-ranked retrieval of explicitly saved memories and carefully scoped context injection. Do not add automatic extraction.
 
 ## Previous task: local verification of v0.4 voice mode
 
@@ -89,7 +93,7 @@ The hardware model used for this run was not confirmed; do not label it as an HP
 - Viewport-pinned controls: owner confirmed on 2026-11-09 that the layout behaves normally and all controls stay visible.
 - Latest local startup: owner reported 9 tests passed, 1 Starlette deprecation warning, Uvicorn started, and initial GET/POST requests returned 200 OK.
 - Viewport-pinned controls: owner confirmed the interface behaves normally and all controls stay visible.
-- v0.3 durable memory: API, SQLite storage, browser management panel, and regression tests committed; local workflow and updated test suite are not yet verified.
+- v0.3 durable memory: owner confirmed on 2026-11-09 that the implemented memory workflow works locally. The exact pytest summary was not included in the confirmation and is not recorded as a specific test count.
 - v0.3.1 speech output: owner confirmed on 2026-11-09 that speech playback works.
 - v0.4 hands-free voice: code and static test committed; runtime verification pending.
 
