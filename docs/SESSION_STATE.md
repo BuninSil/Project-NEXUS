@@ -6,7 +6,7 @@
 
 - Repository: https://github.com/BuninSil/Project-NEXUS
 - Default branch: main
-- Current stage: **v0.4 hands-free voice verified by owner; v0.4.1 interruption implemented, local interruption verification pending**
+- Current stage: **v0.4 hands-free voice verified by owner; v0.4.1 manual interruption and speech hints implemented; voice barge-in deferred to echo-cancelled audio pipeline**
 - Product target: personal evolving AI companion; see PROJECT_SPEC.md.
 
 ## Confirmed by owner on 2026-11-09
@@ -33,13 +33,13 @@ The hardware model used for this run was not confirmed; do not label it as an HP
 - Browser-native Russian speech synthesis, per-message playback, automatic speech toggle, and stop control.
 - Speech-only pronunciation normalization: Latin or Russian spellings of NEXUS are spoken using the phonetic hint «нэ́ксус»; visible chat text is unchanged.
 - Hands-free voice mode using SpeechRecognition/webkitSpeechRecognition: continuous Russian recognition, one-second silence-based turn completion, submission through the existing POST /chat endpoint, spoken response, and automatic return to listening.
-- v0.4.1 best-effort interruption: recognition remains active during playback, echo-overlap filtering is applied, short stop commands can interrupt immediately, longer phrases use conservative transcript/confidence checks, and a manual «Перебить» button is available. Optional phrase biasing is enabled only when exposed by the browser.
+- v0.4.1 safe interruption: recognition is stopped for the duration of TTS playback to prevent NEXUS hearing itself; the «Перебить» button cancels speech and resumes listening. Voice barge-in is deferred until an echo-cancelled audio path is available.
 - Voice mode can be explicitly stopped. Microphone permission is requested by the browser after the user activates the mode.
 - Static asset test checks for the hands-free controls and recognition flow.
 
 ## Not implemented / not verified
 
-- Voice interruption/barge-in and pronunciation/ASR hints are implemented in browser assets; local acoustic and pronunciation verification is pending. Browser-native speech recognition cannot guarantee echo cancellation or accurate recognition.
+- Manual interruption and pronunciation/ASR hints are implemented in browser assets; local verification is pending. Voice barge-in is not implemented. Browser-native SpeechRecognition does not provide reliable echo cancellation, so recognition is paused during TTS to prevent feedback loops.
 - Browser-native recognition cannot guarantee echo cancellation or distinguish speakers; false interruptions and missed speech remain possible.
 - Reliable background-tab/mobile recognition is not guaranteed.
 - Durable semantic/user-approved memory. SQLite currently stores conversation messages only.
@@ -65,9 +65,9 @@ The hardware model used for this run was not confirmed; do not label it as an HP
 2. Run `Start-NEXUS.bat`; record the actual pytest result.
 3. Open http://127.0.0.1:8000/ in Chrome or Edge and enable «🎙 Голосовой режим».
 4. Ask NEXUS to say its own name and confirm the voice says «нэ́ксус» while the visible chat still says NEXUS.
-5. Let NEXUS speak, then say «Стоп» or interrupt with a short unrelated phrase. Confirm playback stops and your phrase becomes the next user turn.
-6. Repeat using the visible «Перебить» button.
-7. Test ordinary Russian phrases and project-name variants; note recognition errors, false interruptions from speaker echo, and missed interruptions.
+5. Let NEXUS speak and confirm the microphone is paused while it talks (no self-trigger loop).
+6. Press «Перебить» and confirm playback stops and listening resumes.
+7. Test ordinary Russian phrases and project-name variants.
 8. Stop voice mode and confirm the microphone is released.
 
 ## Verification record
@@ -76,7 +76,7 @@ The hardware model used for this run was not confirmed; do not label it as an HP
 - v0.2.1 browser UI: owner confirmed on 2026-11-09 that the interface works.
 - v0.3.1 speech output: owner confirmed on 2026-11-09 that speech playback works.
 - v0.4 hands-free voice: owner confirmed working locally on 2026-11-09; latest local run before v0.4.1 changes: 9 passed, 1 deprecation warning.
-- v0.4.1 interruption, phonetic name hint, ASR name normalization, and optional phrase biasing: implemented in browser assets; latest changes have not yet been run locally. Acoustic verification pending.
+- v0.4.1 manual interruption, phonetic name hint, ASR name normalization, and optional phrase biasing: implemented in browser assets; latest changes have not yet been run locally. Voice barge-in deliberately deferred because browser-native recognition caused a feedback loop when left active during TTS.
 
 ## Session handoff rule
 
