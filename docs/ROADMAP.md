@@ -7,7 +7,7 @@ The long-term target is a local-first personal AI companion with native language
 - [x] v0.1 Foundation scaffold: FastAPI, configurable model adapter, SQLite conversation history, configuration, schemas, and documentation.
 - [x] v0.2 First boot and model-independent core: deterministic no-model fallback and API routing; owner confirmed Windows installation, five passing tests, and server startup on 2026-11-09.
 - [x] v0.2.1 Browser chat interface: first-party responsive chat UI served by FastAPI; owner confirmed the interface works.
-- [ ] v0.3 Durable memory: explicit user-approved records, categories, provenance, correction, search/list, JSON export/delete, browser management panel, and storage separation tests implemented; awaiting local runtime verification and later context-retrieval integration.
+- [x] v0.3 Durable memory management: explicit user-approved records, categories, provenance, correction, search/list, JSON export/delete, browser management panel, and storage separation tests implemented; owner confirmed the local memory workflow works on 2026-11-09. Relevance-ranked context retrieval/injection remains a separate next increment.
 - [ ] v0.4 Research and knowledge: controlled web search/fetch, extraction, source tracking, freshness, deduplication, confidence, citations, and prompt-injection defenses.
 - [ ] v0.5 Native NLP foundation: language detection, tokenization experiments, intent/entity extraction, dialogue state, and measurable evaluation set.
 - [ ] v0.6 Small native models: train/evaluate compact task-specific models for routing, classification, and retrieval ranking; version datasets and checkpoints.
@@ -34,4 +34,4 @@ The first hands-free implementation uses browser-native SpeechRecognition (inclu
 
 ## Immediate next milestone
 
-Run \`Start-NEXUS.bat\` and record the actual pytest result. In the browser, open «Память NEXUS», create a test entry, search it, edit it, export JSON, delete it, and restart the server to confirm storage persists. Verify that the existing conversation history remains intact. Then complete local hands-free voice verification in Chrome or Edge. Only after those checks should v0.3 be marked verified and memory retrieval/context integration begin.
+Complete local hands-free voice verification in Chrome or Edge: activate «🎙 Голосовой режим», grant microphone permission, speak two short Russian turns, confirm each turn is submitted and answered aloud, verify listening resumes after playback, then stop the mode and confirm the microphone stops. Record the exact pytest result from the same startup. After voice verification, implement relevance-ranked retrieval of explicitly saved memories and bounded context injection; keep automatic extraction disabled.
