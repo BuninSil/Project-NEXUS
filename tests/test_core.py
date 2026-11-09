@@ -61,3 +61,15 @@ def test_web_chat_assets_are_served():
     assert "composer" in css.text
     assert js.status_code == 200
     assert 'fetch("/chat"' in js.text
+
+
+def test_web_chat_includes_voice_controls():
+    client = TestClient(main.app)
+    page = client.get("/")
+    script = client.get("/static/app.js")
+
+    assert page.status_code == 200
+    assert 'id="voice-toggle"' in page.text
+    assert script.status_code == 200
+    assert "speechSynthesis" in script.text
+    assert "SpeechSynthesisUtterance" in script.text
