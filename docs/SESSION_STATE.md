@@ -6,7 +6,7 @@
 
 - Repository: https://github.com/BuninSil/Project-NEXUS
 - Default branch: main
-- Current stage: **v0.2.1 verified by owner; browser voice output implemented, local verification pending**
+- Current stage: **v0.4 hands-free browser voice implemented, local runtime verification pending**
 - Product target: personal evolving AI companion; see PROJECT_SPEC.md.
 
 ## Confirmed by owner on 2026-11-09
@@ -14,9 +14,10 @@
 - Git 2.56.0 and Python 3.12.10 available on Windows.
 - Repository cloned and virtual environment created.
 - Dependencies installed successfully.
-- pytest -q: **5 passed, 1 Starlette deprecation warning**.
+- pytest -q: five tests passed at the initial v0.2 checkpoint, with one Starlette deprecation warning.
 - Uvicorn started successfully at http://127.0.0.1:8000.
-- Owner confirmed the API chat endpoint responds successfully through Swagger.
+- Owner confirmed the browser chat UI works.
+- Owner confirmed browser speech output works.
 
 The hardware model used for this run was not confirmed; do not label it as an HP 250 G7 verification unless the owner confirms that device.
 
@@ -28,17 +29,21 @@ The hardware model used for this run was not confirmed; do not label it as an HP
 - SQLite conversation history.
 - Built-in deterministic handler: /help, /status, and an honest no-model response for other messages.
 - Optional OpenAI-compatible adapter remains available when LLM_MODEL is configured.
-- Tests cover built-in behavior, API persistence, the chat page, and static assets.
+- Browser-native Russian speech synthesis, per-message playback, automatic speech toggle, and stop control.
+- Hands-free voice mode using SpeechRecognition/webkitSpeechRecognition: continuous Russian recognition, one-second silence-based turn completion, submission through the existing POST /chat endpoint, spoken response, and automatic return to listening.
+- Voice mode can be explicitly stopped. Microphone permission is requested by the browser after the user activates the mode.
+- Static asset test checks for the hands-free controls and recognition flow.
 
-## Not implemented
+## Not implemented / not verified
 
-- Browser UI local runtime/smoke test after this commit.
+- Hands-free mode has not yet been tested in the owner's local Chrome/Edge browser.
+- Actual microphone permission, speech recognition service availability, turn detection, playback handoff, and repeated listen/respond cycles remain unverified.
+- Voice interruption/barge-in is not implemented; recognition pauses during NEXUS speech to avoid feedback.
+- Reliable background-tab/mobile recognition is not guaranteed.
 - Durable semantic/user-approved memory. SQLite currently stores conversation messages only.
 - Internet research/indexing pipeline.
 - Native language model or training pipeline.
 - Agent planner and computer-control tools.
-- Microphone speech recognition / voice input.
-- Local runtime verification of browser speech output.
 - Authenticated remote/VPS deployment.
 
 ## User constraints and architecture decisions
@@ -52,22 +57,24 @@ The hardware model used for this run was not confirmed; do not label it as an HP
 - Agent tools must be allowlisted, scoped, logged, cancellable, and require approval for consequential actions.
 - Never claim an unverified feature works.
 
-## Current task: verify browser voice output
+## Current task: local verification of v0.4 voice mode
 
 1. In PowerShell, stop the old server with Ctrl+C.
-2. Run Start-NEXUS.bat to pull the latest changes, install/check dependencies, run tests, and start Uvicorn.
-3. Run pytest -q; the suite now contains 7 tests, but record the actual local result.
-4. Open http://127.0.0.1:8000/.
-5. Enable «Озвучка: вкл.» and send a short message; confirm the reply is spoken.
-6. Click «Слушать» under an older assistant reply and verify «Стоп».
-7. If there is no sound, check browser site sound permission and Windows output device / installed Russian speech voices.
-8. After voice verification, return to v0.3 durable memory. Microphone input is not included yet.
+2. Run \`Start-NEXUS.bat\` from the project folder. It should pull the latest commits, check dependencies, run tests, and start Uvicorn.
+3. Record the actual output of \`pytest -q\`; do not assume the test count or result.
+4. Open http://127.0.0.1:8000/ in current Chrome or Edge.
+5. Click «🎙 Голосовой режим» and allow microphone access.
+6. Say a short Russian phrase. After about one second of silence, it should appear in chat and be sent to the API.
+7. Confirm NEXUS speaks the reply and automatically returns to «Слушаю…».
+8. Repeat for at least two turns, then click «Завершить голосовой режим» and confirm the microphone stops.
+9. If recognition fails, capture the exact browser status/error and check site microphone permission. Do not mark v0.4 verified until the complete cycle succeeds.
 
 ## Verification record
 
 - v0.2 API/core first boot: owner-reported verified on Windows on 2026-11-09; five tests passed, one deprecation warning.
-- v0.2.1 browser UI: owner confirmed on 2026-11-09 that all interface checks work.
-- Voice output: implementation committed; tests and actual audio playback are not yet verified locally.
+- v0.2.1 browser UI: owner confirmed on 2026-11-09 that the interface works.
+- v0.3.1 speech output: owner confirmed on 2026-11-09 that speech playback works.
+- v0.4 hands-free voice: code and static test committed; runtime verification pending.
 
 ## Session handoff rule
 
