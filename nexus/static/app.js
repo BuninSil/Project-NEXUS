@@ -1,5 +1,6 @@
 (() => {
   const STORAGE_KEY = "nexus.conversation_id";
+  const VOICE_STORAGE_KEY = "nexus.voice_enabled";
   const form = document.getElementById("chat-form");
   const input = document.getElementById("message-input");
   const sendButton = document.getElementById("send-button");
@@ -12,45 +13,62 @@
   const newChatButton = document.getElementById("new-chat");
   const voiceToggle = document.getElementById("voice-toggle");
   const voiceStop = document.getElementById("voice-stop");
-  const VOICE_STORAGE_KEY = "nexus.voice_enabled";
-  let voiceEnabled = localStorage.getItem(VOICE_STORAGE_KEY) === "true";
+  const voiceModeToggle = document.getElementById("voice-mode-toggle");
+  const voiceStatus = document.getElementById("voice-status");
+  const voiceEnabled = localStorage.getItem(VOICE_STORAGE_KEY) === "true";
   const speechSupported = "speechSynthesis" in window && "SpeechSynthesisUtterance" in window;
+  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+  const recognitionSupported = Boolean(SpeechRecognition);
+
+  let conversationId = localStorage.getItem(STORAGE_KEY) || makeConversationId();
+  let recognition = null;
+  let voiceModeActive = false;
+  let voiceBusy = false;
+  let speaking = false;
+  let silenceTimer = null;
+  let pendingTranscript = "";
 
   function makeConversationId() {
-    if (window.crypto && typeof window.crypto.randomUUID === "function") {
-      return window.crypto.randomUUID();
-    }
+    if (window.crypto && typeof window.crypto.randomUUID === "function") return window.crypto.randomUUID();
     return "session-" + Date.now() + "-" + Math.random().toString(16).slice(2);
   }
 
-  let conversationId = localStorage.getItem(STORAGE_KEY) || makeConversationId();
   localStorage.setItem(STORAGE_KEY, conversationId);
 
   function updateConversationLabel() {
     conversationLabel.textContent = conversationId.slice(0, 8) + "…";
   }
 
-  function scrollToLatest() {
-    messages.scrollTop = messages.scrollHeight;
+  function scrollToLatest() { messages.scrollTop = messages.scrollHeight; }
+  function showWelcome(show) { welcomeCard.hidden = !show; }
+
+  function setVoiceStatus(message, state) {
+    voiceStatus.textContent = message;
+    voiceStatus.dataset.state = state || "idle";
   }
 
-  function showWelcome(show) {
-    welcomeCard.hidden = !show;
-  }
-
-  function speakText(content) {
-    if (!speechSupported || !content) return;
+  function speakText(content, onFinished) {
+    if (!speechSupported || !content) return false;
     window.speechSynthesis.cancel();
     const utterance = new SpeechSynthesisUtterance(content);
     utterance.lang = "ru-RU";
     utterance.rate = 0.98;
-    const voices = window.speechSynthesis.getVoices();
-    const russianVoice = voices.find((voice) => voice.lang.toLowerCase().startsWith("ru"));
+    const russianVoice = window.speechSynthesis.getVoices().find((voice) => voice.lang.toLowerCase().startsWith("ru"));
     if (russianVoice) utterance.voice = russianVoice;
-    utterance.onstart = () => { voiceStop.hidden = false; };
-    utterance.onend = () => { voiceStop.hidden = true; };
-    utterance.onerror = () => { voiceStop.hidden = true; };
+    const finish = () => {
+      speaking = false;
+      voiceStop.hidden = true;
+      if (typeof onFinished === "function") onFinished();
+    };
+    utterance.onstart = () => {
+      speaking = true;
+      voiceStop.hidden = false;
+      if (voiceModeActive) setVoiceStatus("NEXUS отвечает…", "speaking");
+    };
+    utterance.onend = finish;
+    utterance.onerror = finish;
     window.speechSynthesis.speak(utterance);
+    return true;
   }
 
   function updateVoiceControls() {
@@ -59,34 +77,30 @@
     voiceToggle.textContent = speechSupported
       ? (voiceEnabled ? "Озвучка: вкл." : "Озвучка: выкл.")
       : "Озвучка недоступна";
-    voiceToggle.title = speechSupported
-      ? "Автоматически озвучивать новые ответы"
-      : "Браузер не поддерживает синтез речи";
+    voiceModeToggle.disabled = !recognitionSupported;
+    voiceModeToggle.textContent = voiceModeActive ? "Завершить голосовой режим" : "🎙 Голосовой режим";
+    voiceModeToggle.setAttribute("aria-pressed", String(voiceModeActive));
+    if (!recognitionSupported) setVoiceStatus("Распознавание речи недоступно в этом браузере", "error");
   }
 
   function addMessage(role, content, timestamp, isError = false) {
     showWelcome(false);
     const article = document.createElement("article");
     article.className = "message " + role + (isError ? " error" : "");
-
     const avatar = document.createElement("div");
     avatar.className = "avatar";
     avatar.setAttribute("aria-hidden", "true");
     avatar.textContent = role === "user" ? "В" : "N";
-
     const body = document.createElement("div");
     body.className = "message-body";
-
     const heading = document.createElement("div");
     heading.className = "message-heading";
     const label = role === "user" ? "ВЫ" : "NEXUS";
     const time = timestamp ? new Date(timestamp).toLocaleTimeString("ru-RU", {hour: "2-digit", minute: "2-digit"}) : "";
     heading.textContent = time ? label + " · " + time : label;
-
     const text = document.createElement("div");
     text.className = "message-content";
     text.textContent = content;
-
     body.append(heading, text);
     if (role === "assistant" && !isError && speechSupported) {
       const speakButton = document.createElement("button");
@@ -137,13 +151,23 @@
     }
   }
 
-  async function sendMessage(message) {
+  function resumeVoiceMode() {
+    if (!voiceModeActive || voiceBusy || speaking) return;
+    setVoiceStatus("Слушаю…", "listening");
+    window.setTimeout(() => {
+      if (!voiceModeActive || voiceBusy || speaking) return;
+      try { recognition.start(); } catch (error) { /* Recognition may still be shutting down. onend retries. */ }
+    }, 300);
+  }
+
+  async function sendMessage(message, fromVoice = false) {
+    voiceBusy = voiceModeActive;
     sendButton.disabled = true;
     input.disabled = true;
     addMessage("user", message);
     const pending = addMessage("assistant", "Передаю сообщение ядру…");
     pending.classList.add("pending");
-
+    let shouldResumeAfterSpeech = false;
     try {
       const response = await fetch("/chat", {
         method: "POST",
@@ -158,14 +182,93 @@
       pending.remove();
       addMessage("assistant", payload.reply);
       await checkHealth();
+      if ((voiceModeActive || voiceEnabled) && speechSupported) {
+        shouldResumeAfterSpeech = voiceModeActive;
+        speakText(payload.reply, () => {
+          if (shouldResumeAfterSpeech) {
+            voiceBusy = false;
+            resumeVoiceMode();
+          }
+        });
+      }
     } catch (error) {
       pending.remove();
       addMessage("assistant", "Не удалось получить ответ: " + error.message, null, true);
     } finally {
       sendButton.disabled = false;
       input.disabled = false;
-      input.focus();
+      if (voiceModeActive && !speaking) {
+        voiceBusy = false;
+        resumeVoiceMode();
+      } else if (!fromVoice) {
+        input.focus();
+      }
     }
+  }
+
+  function stopRecognition() {
+    if (!recognition) return;
+    try { recognition.stop(); } catch (error) { /* It may already be stopped. */ }
+  }
+
+  function finishVoiceTurn() {
+    const message = pendingTranscript.trim();
+    pendingTranscript = "";
+    if (!message || !voiceModeActive) return;
+    window.clearTimeout(silenceTimer);
+    voiceBusy = true;
+    stopRecognition();
+    sendMessage(message, true);
+  }
+
+  function startVoiceMode() {
+    if (!recognitionSupported) return;
+    recognition = new SpeechRecognition();
+    recognition.lang = "ru-RU";
+    recognition.continuous = true;
+    recognition.interimResults = false;
+    recognition.maxAlternatives = 1;
+    recognition.onresult = (event) => {
+      for (let index = event.resultIndex; index < event.results.length; index += 1) {
+        if (event.results[index].isFinal) pendingTranscript += event.results[index][0].transcript + " ";
+      }
+      if (pendingTranscript.trim()) {
+        setVoiceStatus("Речь распознана, жду окончания фразы…", "processing");
+        window.clearTimeout(silenceTimer);
+        silenceTimer = window.setTimeout(finishVoiceTurn, 1000);
+      }
+    };
+    recognition.onerror = (event) => {
+      if (event.error === "not-allowed" || event.error === "service-not-allowed") {
+        voiceModeActive = false;
+        voiceBusy = false;
+        updateVoiceControls();
+        setVoiceStatus("Нет доступа к микрофону. Разреши его для этой страницы.", "error");
+      } else if (event.error !== "no-speech" && event.error !== "aborted") {
+        setVoiceStatus("Ошибка распознавания: " + event.error, "error");
+      }
+    };
+    recognition.onend = () => {
+      if (voiceModeActive && !voiceBusy && !speaking) resumeVoiceMode();
+    };
+    voiceModeActive = true;
+    voiceBusy = false;
+    updateVoiceControls();
+    setVoiceStatus("Запрашиваю доступ к микрофону…", "processing");
+    resumeVoiceMode();
+  }
+
+  function stopVoiceMode() {
+    voiceModeActive = false;
+    voiceBusy = false;
+    pendingTranscript = "";
+    window.clearTimeout(silenceTimer);
+    stopRecognition();
+    if (speechSupported) window.speechSynthesis.cancel();
+    speaking = false;
+    voiceStop.hidden = true;
+    updateVoiceControls();
+    setVoiceStatus("Голосовой режим выключен", "idle");
   }
 
   form.addEventListener("submit", (event) => {
@@ -174,6 +277,12 @@
     if (!message || sendButton.disabled) return;
     input.value = "";
     input.style.height = "auto";
+    if (voiceModeActive) {
+      voiceBusy = true;
+      pendingTranscript = "";
+      window.clearTimeout(silenceTimer);
+      stopRecognition();
+    }
     sendMessage(message);
   });
 
@@ -181,7 +290,6 @@
     input.style.height = "auto";
     input.style.height = Math.min(input.scrollHeight, 180) + "px";
   });
-
   input.addEventListener("keydown", (event) => {
     if (event.key === "Enter" && !event.shiftKey) {
       event.preventDefault();
@@ -190,17 +298,25 @@
   });
 
   voiceToggle.addEventListener("click", () => {
-    voiceEnabled = !voiceEnabled;
-    localStorage.setItem(VOICE_STORAGE_KEY, String(voiceEnabled));
-    updateVoiceControls();
-    if (!voiceEnabled && speechSupported) window.speechSynthesis.cancel();
+    const enabled = localStorage.getItem(VOICE_STORAGE_KEY) !== "true";
+    localStorage.setItem(VOICE_STORAGE_KEY, String(enabled));
+    voiceToggle.setAttribute("aria-pressed", String(enabled));
+    voiceToggle.textContent = enabled ? "Озвучка: вкл." : "Озвучка: выкл.";
+    if (!enabled && speechSupported) window.speechSynthesis.cancel();
   });
-
+  voiceModeToggle.addEventListener("click", () => {
+    if (voiceModeActive) stopVoiceMode();
+    else startVoiceMode();
+  });
   voiceStop.addEventListener("click", () => {
     if (speechSupported) window.speechSynthesis.cancel();
+    speaking = false;
     voiceStop.hidden = true;
+    if (voiceModeActive) {
+      voiceBusy = false;
+      resumeVoiceMode();
+    }
   });
-
   newChatButton.addEventListener("click", () => {
     conversationId = makeConversationId();
     localStorage.setItem(STORAGE_KEY, conversationId);
@@ -211,9 +327,6 @@
   });
 
   updateVoiceControls();
-  if (speechSupported) {
-    window.speechSynthesis.getVoices();
-    window.speechSynthesis.addEventListener("voiceschanged", () => window.speechSynthesis.getVoices());
-  }
+  if (speechSupported) window.speechSynthesis.getVoices();
   Promise.all([checkHealth(), loadHistory()]);
 })();
