@@ -27,6 +27,7 @@ The browser client is a static first-party interface served by FastAPI. It uses 
 - Optional OpenAI-compatible model adapter selected when LLM_MODEL is configured.
 - The interface restores the latest 100 messages for the current conversation and can start a fresh conversation.
 - Browser-native speech synthesis can read assistant replies aloud in Russian; users can play individual messages or enable automatic playback.
+- A speech-only normalization layer rewrites NEXUS and common project acronyms/names for Russian playback, and adds explicit stress marks to a curated set of frequently mispronounced Russian words. Visible chat text and stored messages are not modified.
 - Hands-free voice mode uses browser SpeechRecognition, including the webkit-prefixed Chromium API, with Russian recognition, continuous listening, a one-second pause-based end-of-turn trigger, POST /chat submission, spoken response, and automatic listening resumption.
 
 ## Voice-mode limitations
