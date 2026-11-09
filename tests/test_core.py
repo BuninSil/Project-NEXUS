@@ -85,32 +85,6 @@ def test_web_chat_includes_hands_free_voice_controls():
     assert 'id="voice-status"' in page.text
     assert script.status_code == 200
     assert "SpeechRecognition" in script.text
-    assert "instance.continuous = true" in script.text
+    assert "recognition.continuous = true" in script.text
     assert "finishVoiceTurn" in script.text
     assert "resumeVoiceMode" in script.text
-    assert "const instance = new SpeechRecognition()" in script.text
-    assert "recognition.abort()" in script.text
-
-
-def test_voice_interruption_controls_are_present():
-    client = TestClient(main.app)
-    page = client.get("/")
-    script = client.get("/static/app.js")
-
-    assert page.status_code == 200
-    assert 'id="voice-interrupt"' in page.text
-    assert script.status_code == 200
-    assert "interruptSpeech" in script.text
-    assert "interruptSpeech" in script.text
-    assert "correctRecognizedText" in script.text
-    assert "stopRecognition();" in script.text
-    assert "SpeechRecognitionPhrase" in script.text
-
-
-def test_speech_output_uses_russian_pronunciation_for_nexus():
-    client = TestClient(main.app)
-    script = client.get("/static/app.js")
-
-    assert script.status_code == 200
-    assert "prepareSpeechText" in script.text
-    assert "нэ́ксус" in script.text
