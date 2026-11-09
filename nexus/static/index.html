@@ -52,7 +52,11 @@
             <span class="eyebrow">ТЕКУЩИЙ СЕАНС</span>
             <div class="conversation-id" id="conversation-label">Подключение…</div>
           </div>
-          <span class="mode-pill" id="mode-pill">Проверка режима</span>
+          <div class="conversation-tools">
+            <span class="mode-pill" id="mode-pill">Проверка режима</span>
+            <button class="voice-toggle" id="voice-toggle" type="button" aria-pressed="false" title="Автоматически озвучивать новые ответы">Озвучка: выкл.</button>
+            <button class="voice-stop" id="voice-stop" type="button" hidden>Стоп</button>
+          </div>
         </div>
         <div class="messages" id="messages" role="log" aria-live="polite" aria-relevant="additions">
           <div class="welcome-card" id="welcome-card">
