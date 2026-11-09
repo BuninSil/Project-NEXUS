@@ -6,7 +6,7 @@
 
 - Repository: https://github.com/BuninSil/Project-NEXUS
 - Default branch: main
-- Current stage: **v0.4 hands-free voice verified by owner; v0.4.1 manual interruption and speech hints implemented; voice barge-in deferred to echo-cancelled audio pipeline**
+- Current stage: **v0.4 hands-free browser voice implemented, local runtime verification pending**
 - Product target: personal evolving AI companion; see PROJECT_SPEC.md.
 
 ## Confirmed by owner on 2026-11-09
@@ -18,7 +18,6 @@
 - Uvicorn started successfully at http://127.0.0.1:8000.
 - Owner confirmed the browser chat UI works.
 - Owner confirmed browser speech output works.
-- Owner confirmed hands-free voice mode works; latest local run completed with 9 passing tests and one Starlette/httpx deprecation warning.
 
 The hardware model used for this run was not confirmed; do not label it as an HP 250 G7 verification unless the owner confirms that device.
 
@@ -31,16 +30,15 @@ The hardware model used for this run was not confirmed; do not label it as an HP
 - Built-in deterministic handler: /help, /status, and an honest no-model response for other messages.
 - Optional OpenAI-compatible adapter remains available when LLM_MODEL is configured.
 - Browser-native Russian speech synthesis, per-message playback, automatic speech toggle, and stop control.
-- Speech-only pronunciation normalization: Latin or Russian spellings of NEXUS are spoken using the phonetic hint «нэ́ксус»; visible chat text is unchanged.
 - Hands-free voice mode using SpeechRecognition/webkitSpeechRecognition: continuous Russian recognition, one-second silence-based turn completion, submission through the existing POST /chat endpoint, spoken response, and automatic return to listening.
-- v0.4.1 safe interruption: recognition is aborted for the duration of TTS playback to prevent NEXUS hearing itself; the «Перебить» button cancels speech and resumes listening. Each listening cycle now creates a fresh SpeechRecognition instance after the previous instance ends, avoiding reuse of a stopped Chromium recognizer. Voice barge-in is deferred until an echo-cancelled audio path is available.
 - Voice mode can be explicitly stopped. Microphone permission is requested by the browser after the user activates the mode.
 - Static asset test checks for the hands-free controls and recognition flow.
 
 ## Not implemented / not verified
 
-- Manual interruption, pronunciation/ASR hints, and a fresh-instance recognition restart fix are implemented in browser assets; local verification is pending. The restart fix has JavaScript syntax validation only; pytest and browser microphone behavior have not yet been verified. Voice barge-in is not implemented. Browser-native SpeechRecognition does not provide reliable echo cancellation, so recognition is paused during TTS to prevent feedback loops.
-- Browser-native recognition cannot guarantee echo cancellation or distinguish speakers; false interruptions and missed speech remain possible.
+- Hands-free mode has not yet been tested in the owner's local Chrome/Edge browser.
+- Actual microphone permission, speech recognition service availability, turn detection, playback handoff, and repeated listen/respond cycles remain unverified.
+- Voice interruption/barge-in is not implemented; recognition pauses during NEXUS speech to avoid feedback.
 - Reliable background-tab/mobile recognition is not guaranteed.
 - Durable semantic/user-approved memory. SQLite currently stores conversation messages only.
 - Internet research/indexing pipeline.
@@ -59,33 +57,25 @@ The hardware model used for this run was not confirmed; do not label it as an HP
 - Agent tools must be allowlisted, scoped, logged, cancellable, and require approval for consequential actions.
 - Never claim an unverified feature works.
 
-## Current task: verify v0.4.1 microphone restart fix, voice interruption, and speech polish
+## Current task: local verification of v0.4 voice mode
 
-1. Stop the old server with Ctrl+C.
-2. Run `Start-NEXUS.bat`; record the actual pytest result. The latest browser fix creates a new SpeechRecognition instance after each stop/abort rather than reusing a stopped instance.
-3. Open http://127.0.0.1:8000/ in Chrome or Edge and enable «🎙 Голосовой режим».
-4. Ask NEXUS to say its own name and confirm the voice says «нэ́ксус» while the visible chat still says NEXUS.
-5. Let NEXUS speak and confirm the microphone is paused while it talks (no self-trigger loop).
-6. Press «Перебить» and confirm playback stops and listening resumes.
-7. Test ordinary Russian phrases and project-name variants.
-8. Stop voice mode and confirm the microphone is released.
+1. In PowerShell, stop the old server with Ctrl+C.
+2. Run \`Start-NEXUS.bat\` from the project folder. It should pull the latest commits, check dependencies, run tests, and start Uvicorn.
+3. Record the actual output of \`pytest -q\`; do not assume the test count or result.
+4. Open http://127.0.0.1:8000/ in current Chrome or Edge.
+5. Click «🎙 Голосовой режим» and allow microphone access.
+6. Say a short Russian phrase. After about one second of silence, it should appear in chat and be sent to the API.
+7. Confirm NEXUS speaks the reply and automatically returns to «Слушаю…».
+8. Repeat for at least two turns, then click «Завершить голосовой режим» and confirm the microphone stops.
+9. If recognition fails, capture the exact browser status/error and check site microphone permission. Do not mark v0.4 verified until the complete cycle succeeds.
 
 ## Verification record
 
 - v0.2 API/core first boot: owner-reported verified on Windows on 2026-11-09; five tests passed, one deprecation warning.
 - v0.2.1 browser UI: owner confirmed on 2026-11-09 that the interface works.
 - v0.3.1 speech output: owner confirmed on 2026-11-09 that speech playback works.
-- v0.4 hands-free voice: owner confirmed working locally on 2026-11-09; latest local run before v0.4.1 changes: 9 passed, 1 deprecation warning.
-- v0.4.1 manual interruption, phonetic name hint, ASR name normalization, and optional phrase biasing: implemented in browser assets; latest changes have not yet been run locally. Voice barge-in deliberately deferred because browser-native recognition caused a feedback loop when left active during TTS.
+- v0.4 hands-free voice: code and static test committed; runtime verification pending.
 
 ## Session handoff rule
 
 At the start of the next session, reread DEVELOPMENT_PLAYBOOK and this file, then fetch the current README, architecture, roadmap, and relevant code from GitHub. Confirm actual repository state before editing. After the next session, update this file with observed test/startup results and one next task.
-
-
-## Latest fix (2026-11-09)
-
-- Reworked browser recognition lifecycle in `nexus/static/app.js`: each listening cycle creates a fresh `SpeechRecognition` instance; playback/turn submission aborts the current instance; `onend` clears it and schedules a fresh one when the mode is idle.
-- Added static test assertions for fresh-instance creation and `abort()` in `tests/test_core.py`.
-- JavaScript syntax checked with `new Function(...)`: passed. Full pytest and real browser/microphone verification have not been run after this change.
-- Commits: `7d98e8c` (app), `d40fb8e` and `8b052d0` (tests).
