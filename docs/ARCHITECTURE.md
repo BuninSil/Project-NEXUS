@@ -27,9 +27,9 @@ The browser client is a static first-party interface served by FastAPI. It uses 
 - SQLite conversation history; the browser stores only its current conversation identifier in localStorage.
 - Deterministic built-in handler with /help, /status, and an explicit no-model response for other messages.
 - Optional OpenAI-compatible model adapter selected when LLM_MODEL is configured.
-- The interface restores the latest 100 messages for the current conversation and can start a fresh conversation.
+- The interface restores the latest 100 messages for the current conversation and can start a fresh conversation.\n- Browser-native speech synthesis can read assistant replies aloud in Russian; users can play individual messages, enable automatic speech, or stop playback. No server-side audio service or external dependency is required.
 
-The built-in handler is deliberately limited. It is not a language model and does not provide open-ended reasoning or general knowledge. The interface does not change that limitation.
+The built-in handler is deliberately limited. It is not a language model and does not provide open-ended reasoning or general knowledge. The interface does not change that limitation. Speech synthesis only reads the generated reply aloud; it does not add language intelligence or microphone input. Voice availability and voice quality depend on the browser and installed operating-system voices.
 
 ## Core subsystems (future scope)
 
