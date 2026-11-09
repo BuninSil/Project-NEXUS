@@ -6,7 +6,7 @@
 
 - Repository: https://github.com/BuninSil/Project-NEXUS
 - Default branch: main
-- Current stage: **v0.4 hands-free browser voice implemented, local runtime verification pending**
+- Current stage: **v0.4 hands-free voice verified by owner; v0.4.1 interruption implemented, local interruption verification pending**
 - Product target: personal evolving AI companion; see PROJECT_SPEC.md.
 
 ## Confirmed by owner on 2026-11-09
@@ -18,6 +18,7 @@
 - Uvicorn started successfully at http://127.0.0.1:8000.
 - Owner confirmed the browser chat UI works.
 - Owner confirmed browser speech output works.
+- Owner confirmed hands-free voice mode works; latest local run completed with 9 passing tests and one Starlette/httpx deprecation warning.
 
 The hardware model used for this run was not confirmed; do not label it as an HP 250 G7 verification unless the owner confirms that device.
 
@@ -36,9 +37,8 @@ The hardware model used for this run was not confirmed; do not label it as an HP
 
 ## Not implemented / not verified
 
-- Hands-free mode has not yet been tested in the owner's local Chrome/Edge browser.
-- Actual microphone permission, speech recognition service availability, turn detection, playback handoff, and repeated listen/respond cycles remain unverified.
-- Voice interruption/barge-in is not implemented; recognition pauses during NEXUS speech to avoid feedback.
+- Voice interruption/barge-in is implemented as best-effort recognition during playback, with echo-overlap filtering and a manual «Перебить» button; local acoustic verification is pending.
+- Browser-native recognition cannot guarantee echo cancellation or distinguish speakers; false interruptions and missed speech remain possible.
 - Reliable background-tab/mobile recognition is not guaranteed.
 - Durable semantic/user-approved memory. SQLite currently stores conversation messages only.
 - Internet research/indexing pipeline.
@@ -57,7 +57,7 @@ The hardware model used for this run was not confirmed; do not label it as an HP
 - Agent tools must be allowlisted, scoped, logged, cancellable, and require approval for consequential actions.
 - Never claim an unverified feature works.
 
-## Current task: local verification of v0.4 voice mode
+## Current task: local verification of v0.4.1 voice interruption
 
 1. In PowerShell, stop the old server with Ctrl+C.
 2. Run \`Start-NEXUS.bat\` from the project folder. It should pull the latest commits, check dependencies, run tests, and start Uvicorn.
@@ -74,7 +74,8 @@ The hardware model used for this run was not confirmed; do not label it as an HP
 - v0.2 API/core first boot: owner-reported verified on Windows on 2026-11-09; five tests passed, one deprecation warning.
 - v0.2.1 browser UI: owner confirmed on 2026-11-09 that the interface works.
 - v0.3.1 speech output: owner confirmed on 2026-11-09 that speech playback works.
-- v0.4 hands-free voice: code and static test committed; runtime verification pending.
+- v0.4 hands-free voice: owner confirmed working locally on 2026-11-09; latest local run: 9 passed, 1 deprecation warning.
+- v0.4.1 interruption: implemented in browser assets; local acoustic verification pending.
 
 ## Session handoff rule
 
