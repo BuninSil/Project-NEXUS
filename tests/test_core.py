@@ -179,3 +179,19 @@ def test_memory_is_separate_from_conversation_history(tmp_path):
     assert len(db.recent_messages("session-a")) == 1
     assert len(db.list_memories()) == 1
     assert db.recent_messages("session-b") == []
+
+
+def test_memory_controls_are_available_in_browser_ui():
+    client = TestClient(main.app)
+    page = client.get("/")
+    script = client.get("/static/app.js")
+
+    assert page.status_code == 200
+    assert 'id="memory-open"' in page.text
+    assert 'id="memory-overlay"' in page.text
+    assert 'id="memory-create-form"' in page.text
+    assert script.status_code == 200
+    assert 'fetch("/memory"' in script.text
+    assert 'fetch("/memory/export"' in script.text
+    assert 'method: "PUT"' in script.text
+    assert 'method: "DELETE"' in script.text
