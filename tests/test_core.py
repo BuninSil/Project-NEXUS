@@ -73,6 +73,10 @@ def test_web_chat_includes_voice_controls():
     assert script.status_code == 200
     assert "speechSynthesis" in script.text
     assert "SpeechSynthesisUtterance" in script.text
+    assert "prepareSpeechText(content)" in script.text
+    assert '["NEXUS", "Нексус"]' in script.text
+    assert '["звонит", "звони\\u0301т"]' in script.text
+    assert '["договор", "догово\\u0301р"]' in script.text
 
 
 def test_web_chat_includes_hands_free_voice_controls():
