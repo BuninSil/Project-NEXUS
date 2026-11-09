@@ -291,7 +291,7 @@
         if (result.isFinal && !speaking) {
           const normalized = normalizeSpeech(transcript);
           if (interruptedSeed && (normalized.startsWith(interruptedSeed) || interruptedSeed.startsWith(normalized))) {
-            pendingTranscript += transcript + " ";
+            pendingTranscript = transcript + " ";
             interruptedSeed = "";
           } else {
             pendingTranscript += transcript + " ";
