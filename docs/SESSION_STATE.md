@@ -23,7 +23,7 @@ The hardware model used for this run was not confirmed; do not label it as an HP
 
 ## Implemented in GitHub
 
-- FastAPI application: GET / serves the browser chat, GET /health, POST /chat, and GET /memory/recent/{conversation_id}.
+- FastAPI application: GET / serves the browser chat, GET /health, POST /chat, GET /memory/recent/{conversation_id}, GET/POST /memory, PUT/DELETE /memory/{id}, and GET /memory/export.
 - Static responsive first-party UI in nexus/static/; no Node.js, frontend framework, CDN, or third-party scripts.
 - Viewport-pinned chat layout: the top bar, conversation/voice controls, sidebar actions, and message composer stay visible; only the message history scrolls. Uses dynamic viewport height for mobile browser chrome/keyboard changes.
 - UI sends messages to the existing API, restores up to 100 recent messages for its active conversation, starts a new conversation, and displays core/model status.
