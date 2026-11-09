@@ -142,3 +142,18 @@ code { padding: 3px 6px; border: 1px solid var(--border); border-radius: 5px; co
   .conversation-meta { align-items: flex-start; flex-direction: column; }
   .composer-caption span:last-child { display: none; }
 }
+
+/* Voice output controls */
+.conversation-tools { display: flex; align-items: center; justify-content: flex-end; flex-wrap: wrap; gap: 8px; }
+.voice-toggle, .voice-stop, .speak-button {
+  border: 1px solid var(--border); border-radius: 8px; padding: 7px 10px;
+  color: var(--text); background: rgba(255,255,255,.035); font-size: 10px; cursor: pointer;
+}
+.voice-toggle[aria-pressed="true"] { color: var(--accent); border-color: rgba(120,224,192,.4); background: rgba(120,224,192,.08); }
+.voice-toggle:disabled { opacity: .55; cursor: not-allowed; }
+.voice-stop { color: #ffc0c0; }
+.speak-button { display: inline-block; margin-top: 7px; padding: 5px 8px; color: var(--muted); }
+.voice-toggle:hover:not(:disabled), .voice-stop:hover, .speak-button:hover { border-color: var(--accent); color: var(--accent); }
+@media (max-width: 420px) {
+  .conversation-tools { width: 100%; justify-content: flex-start; }
+}
