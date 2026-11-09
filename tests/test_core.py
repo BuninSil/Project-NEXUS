@@ -59,6 +59,9 @@ def test_web_chat_assets_are_served():
 
     assert css.status_code == 200
     assert "composer" in css.text
+    assert "height: 100dvh" in css.text
+    assert "overflow: hidden" in css.text
+    assert "overscroll-behavior: contain" in css.text
     assert js.status_code == 200
     assert 'fetch("/chat"' in js.text
 
