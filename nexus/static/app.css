@@ -175,10 +175,3 @@ code { padding: 3px 6px; border: 1px solid var(--border); border-radius: 5px; co
 .voice-status[data-state="speaking"] { color: #a9c8ff; }
 .voice-status[data-state="error"] { color: var(--danger); }
 @media (max-width: 420px) { .voice-status { text-align: left; } }
-
-/* Voice interruption */
-.voice-interrupt {
-  border: 1px solid rgba(255,177,112,.45); border-radius: 8px; padding: 7px 10px;
-  color: #ffd0a8; background: rgba(255,150,80,.10); font-size: 10px; cursor: pointer;
-}
-.voice-interrupt:hover { border-color: #ffb170; color: #fff0e2; }
