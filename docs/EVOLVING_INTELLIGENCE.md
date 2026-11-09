@@ -11,11 +11,11 @@ The long-term ambition is ChatGPT-like conversational usefulness: understanding 
 ## Non-negotiable principles
 
 1. **Local-first and provider-independent.** Core services must start and remain useful without a paid API, API key, or third-party model endpoint.
-2. **Memory survives model changes.** Conversations, approved facts, preferences, project history, and learning records belong to NEXUS and use documented, exportable formats.
-3. **Learning is explicit and reviewable.** NEXUS may continuously collect candidate memories and examples, but changes to model weights happen only through versioned, evaluated training jobs.
+2. **Memory survives model changes.** Conversations, autonomously maintained facts, preferences, project history, and learning records belong to NEXUS and use documented, exportable formats.
+3. **Memory is autonomously maintained; model learning is controlled.** NEXUS decides what conversational/task context is worth remembering, consolidates and updates it, and asks only when ambiguity, conflict, or sensitivity makes that necessary. The owner can inspect, correct, export, or delete records. Changes to model weights happen only through versioned, evaluated training jobs.
 4. **No uncontrolled self-modification.** NEXUS cannot silently rewrite its own source code, security policy, permissions, or model weights in production.
 5. **Evidence-aware research.** Web content is untrusted. Store source, date, excerpt/provenance, and confidence; distinguish verified facts, claims, hypotheses, and outdated information.
-6. **User-directed relationship.** The user controls what is remembered, corrected, exported, or deleted. NEXUS should develop a consistent conversational character without pretending to be conscious or human.
+6. **User-directed relationship.** NEXUS autonomously maintains useful day-to-day memory; the owner retains oversight and can correct, export, or delete it. Sensitive categories require clear consent. NEXUS should develop a consistent conversational character without pretending to be conscious or human.
 7. **Safe agency.** Tools are allowlisted and scoped. Consequential actions require confirmation; all actions are logged and bounded by time/resource budgets.
 8. **Graceful degradation.** When offline or without a model, memory, local knowledge, deterministic workflows, and permitted local tools remain available. The system must clearly disclose when generative reasoning is unavailable.
 
@@ -49,8 +49,8 @@ A model trained from scratch is a research goal, not a prerequisite for the firs
 
 ### D. Learning and development loop
 Separate four different processes:
-- **Conversation memory:** store messages and retrieve relevant context.
-- **User-approved knowledge:** durable facts/preferences with provenance and edit/delete controls.
+- **Conversation memory:** NEXUS identifies useful details in messages, stores them as structured memories, and retrieves only context relevant to the current task.
+- **Autonomous durable memory:** facts, preferences, project state, decisions, and procedures extracted and maintained by NEXUS with provenance, confidence, consolidation, correction, and forgetting controls.
 - **Experience examples:** corrections, successful task traces, and explicitly approved dialogue examples curated for possible training.
 - **Model training:** offline, versioned jobs using curated datasets; evaluate against a fixed test set and safety checks before promoting a checkpoint.
 
@@ -89,7 +89,7 @@ Keep the core lightweight and separate inference from orchestration so hardware 
 A clean install can start the API without any model credentials. Health checks and deterministic fallback behavior work.
 
 ### Durable memory
-Memory can be added, retrieved, corrected, exported, and deleted. Tests verify isolation between conversations and user control.
+NEXUS autonomously identifies, stores, updates, consolidates, and retrieves useful memories. The owner can inspect, correct, export, and delete records. Tests verify provenance, confidence, privacy boundaries, conflict handling, and isolation from model training.
 
 ### Research
 A research task stores sources and provenance, marks untrusted content, and produces traceable summaries. No page can override system policy.
