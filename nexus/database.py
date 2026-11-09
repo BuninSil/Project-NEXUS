@@ -84,7 +84,7 @@ class Database:
         values: list[Any] = []
         if query:
             escaped = query.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
-            clauses.append("(content LIKE ? ESCAPE '\\\\' OR category LIKE ? ESCAPE '\\\\')")
+            clauses.append("(content LIKE ? OR category LIKE ?)")
             values.extend([f"%{escaped}%", f"%{escaped}%"])
         if category:
             clauses.append("category = ?")
