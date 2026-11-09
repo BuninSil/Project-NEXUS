@@ -157,3 +157,21 @@ code { padding: 3px 6px; border: 1px solid var(--border); border-radius: 5px; co
 @media (max-width: 420px) {
   .conversation-tools { width: 100%; justify-content: flex-start; }
 }
+
+
+/* Hands-free voice conversation */
+.voice-mode-toggle {
+  border: 1px solid rgba(120,224,192,.35); border-radius: 8px; padding: 7px 10px;
+  color: var(--accent); background: rgba(120,224,192,.08); font-size: 10px; cursor: pointer;
+}
+.voice-mode-toggle[aria-pressed="true"] {
+  color: #081510; background: var(--accent); border-color: var(--accent);
+}
+.voice-mode-toggle:disabled { opacity: .5; cursor: not-allowed; }
+.voice-status {
+  flex-basis: 100%; color: var(--muted); font-size: 10px; text-align: right;
+}
+.voice-status[data-state="listening"] { color: var(--accent); }
+.voice-status[data-state="speaking"] { color: #a9c8ff; }
+.voice-status[data-state="error"] { color: var(--danger); }
+@media (max-width: 420px) { .voice-status { text-align: left; } }
