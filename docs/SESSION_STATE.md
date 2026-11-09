@@ -30,6 +30,7 @@ The hardware model used for this run was not confirmed; do not label it as an HP
 - Built-in deterministic handler: /help, /status, and an honest no-model response for other messages.
 - Optional OpenAI-compatible adapter remains available when LLM_MODEL is configured.
 - Browser-native Russian speech synthesis, per-message playback, automatic speech toggle, and stop control.
+- Speech-only pronunciation normalization: NEXUS and common project acronyms/technology names are respelled for Russian playback; a curated list of frequently mis-stressed Russian words receives explicit stress marks. Visible chat text and stored messages remain unchanged.
 - Hands-free voice mode using SpeechRecognition/webkitSpeechRecognition: continuous Russian recognition, one-second silence-based turn completion, submission through the existing POST /chat endpoint, spoken response, and automatic return to listening.
 - Voice mode can be explicitly stopped. Microphone permission is requested by the browser after the user activates the mode.
 - Static asset test checks for the hands-free controls and recognition flow.
@@ -57,7 +58,14 @@ The hardware model used for this run was not confirmed; do not label it as an HP
 - Agent tools must be allowlisted, scoped, logged, cancellable, and require approval for consequential actions.
 - Never claim an unverified feature works.
 
-## Current task: local verification of v0.4 voice mode
+## Current task: verify Russian pronunciation normalization
+
+1. Run `Start-NEXUS.bat` and record the actual pytest result.
+2. In the browser, enable speech output and ask NEXUS to say its name, technical terms (API, SQLite, Python, GitHub), and several stress-sensitive Russian words (звонит, договор, каталог).
+3. Confirm whether the selected Russian voice respects the inserted stress marks. Different browser/OS voices may ignore them.
+4. Record mispronounced words and expand the curated lexicon only with verified readings.
+
+## Previous task: local verification of v0.4 voice mode
 
 1. In PowerShell, stop the old server with Ctrl+C.
 2. Run \`Start-NEXUS.bat\` from the project folder. It should pull the latest commits, check dependencies, run tests, and start Uvicorn.
