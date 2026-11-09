@@ -47,10 +47,87 @@
     voiceStatus.dataset.state = state || "idle";
   }
 
+  // Browser voices differ in how they read Latin product names and Russian stress.
+  // Normalize only the spoken copy; the visible chat message remains untouched.
+  const SPEECH_REPLACEMENTS = [
+    ["FastAPI", "Фаст Эй-Пи-Ай"],
+    ["NEXUS", "Нексус"],
+    ["SQLite", "эс-кью-эл-айт"],
+    ["Uvicorn", "Ювикорн"],
+    ["Python", "Пайтон"],
+    ["GitHub", "ГитХаб"],
+    ["Windows", "Виндоус"],
+    ["Chrome", "Хром"],
+    ["Chromium", "Хромиум"],
+    ["Edge", "Эдж"],
+    ["HTTPS", "эйч-ти-ти-пи-эс"],
+    ["HTTP", "эйч-ти-ти-пи"],
+    ["API", "эй-пи-ай"],
+    ["LLM", "эл-эл-эм"],
+    ["JSON", "джейсон"],
+    ["SQLite", "эс-кью-эл-айт"],
+    ["SQL", "эс-кью-эл"],
+    ["URL", "ю-ар-эл"],
+    ["VPS", "ви-пи-эс"],
+    ["VDS", "ви-ди-эс"],
+    ["Git", "Гит"]
+  ];
+
+  const RUSSIAN_STRESS = [
+    ["звонит", "звони\\u0301т"],
+    ["звонят", "звоня\\u0301т"],
+    ["договор", "догово\\u0301р"],
+    ["договоры", "догово\\u0301ры"],
+    ["каталог", "катало\\u0301г"],
+    ["квартал", "кварта\\u0301л"],
+    ["жалюзи", "жалюзи\\u0301"],
+    ["торты", "то\\u0301рты"],
+    ["средства", "сре\\u0301дства"],
+    ["обеспечение", "обеспе\\u0301чение"],
+    ["начать", "нача\\u0301ть"],
+    ["понял", "поня\\u0301л"],
+    ["поняла", "поняла\\u0301"],
+    ["принять", "приня\\u0301ть"],
+    ["создал", "созда\\u0301л"],
+    ["создала", "создала\\u0301"],
+    ["включит", "включи\\u0301т"],
+    ["включат", "включа\\u0301т"],
+    ["положить", "положи\\u0301ть"],
+    ["положил", "положи\\u0301л"],
+    ["положила", "положи\\u0301ла"],
+    ["красивее", "красиве\\u0301е"],
+    ["баловать", "балова\\u0301ть"],
+    ["ходатайство", "хода\\u0301тайство"],
+    ["исчерпать", "исче\\u0301рпать"],
+    ["щавель", "щаве\\u0301ль"],
+    ["эксперт", "экспе\\u0301рт"],
+    ["феномен", "фено\\u0301мен"],
+    ["диспансер", "диспансё\\u0301р"],
+    ["оптовый", "опто\\u0301вый"]
+  ];
+
+  function replaceWholeWord(text, source, replacement) {
+    const escaped = source.replace(/[.*+?^${}()|[\\]\\\\]/g, "\\\\  function speakText(content, onFinished) {
+");
+    const pattern = new RegExp("(^|[^\\\\p{L}\\\\p{N}_])" + escaped + "(?=$|[^\\\\p{L}\\\\p{N}_])", "giu");
+    return text.replace(pattern, (_match, prefix) => prefix + replacement);
+  }
+
+  function prepareSpeechText(content) {
+    let spoken = String(content || "");
+    for (const [source, replacement] of SPEECH_REPLACEMENTS) {
+      spoken = replaceWholeWord(spoken, source, replacement);
+    }
+    for (const [source, replacement] of RUSSIAN_STRESS) {
+      spoken = replaceWholeWord(spoken, source, replacement);
+    }
+    return spoken;
+  }
+
   function speakText(content, onFinished) {
     if (!speechSupported || !content) return false;
     window.speechSynthesis.cancel();
-    const utterance = new SpeechSynthesisUtterance(content);
+    const utterance = new SpeechSynthesisUtterance(prepareSpeechText(content));
     utterance.lang = "ru-RU";
     utterance.rate = 0.98;
     const russianVoice = window.speechSynthesis.getVoices().find((voice) => voice.lang.toLowerCase().startsWith("ru"));
