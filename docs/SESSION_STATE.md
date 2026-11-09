@@ -6,7 +6,7 @@
 
 - Repository: https://github.com/BuninSil/Project-NEXUS
 - Default branch: main
-- Current stage: **v0.2.1 — browser chat interface implemented, local verification pending**
+- Current stage: **v0.2.1 verified by owner; browser voice output implemented, local verification pending**
 - Product target: personal evolving AI companion; see PROJECT_SPEC.md.
 
 ## Confirmed by owner on 2026-11-09
@@ -37,7 +37,8 @@ The hardware model used for this run was not confirmed; do not label it as an HP
 - Internet research/indexing pipeline.
 - Native language model or training pipeline.
 - Agent planner and computer-control tools.
-- Voice interface.
+- Microphone speech recognition / voice input.
+- Local runtime verification of browser speech output.
 - Authenticated remote/VPS deployment.
 
 ## User constraints and architecture decisions
@@ -51,21 +52,22 @@ The hardware model used for this run was not confirmed; do not label it as an HP
 - Agent tools must be allowlisted, scoped, logged, cancellable, and require approval for consequential actions.
 - Never claim an unverified feature works.
 
-## Current task: verify browser chat interface
+## Current task: verify browser voice output
 
 1. In PowerShell, stop the old server with Ctrl+C.
-2. Run the launcher again, or in the project folder run git pull --ff-only.
-3. Run pytest -q; expected: 7 tests pass (actual result must be recorded after execution).
-4. Start the server with uvicorn nexus.main:app --reload or the launcher.
-5. Open http://127.0.0.1:8000/.
-6. Send /status; confirm a reply appears.
-7. Reload the page; confirm the conversation history returns.
-8. Click Новый диалог; confirm a fresh empty conversation opens.
+2. Run Start-NEXUS.bat to pull the latest changes, install/check dependencies, run tests, and start Uvicorn.
+3. Run pytest -q; the suite now contains 7 tests, but record the actual local result.
+4. Open http://127.0.0.1:8000/.
+5. Enable «Озвучка: вкл.» and send a short message; confirm the reply is spoken.
+6. Click «Слушать» under an older assistant reply and verify «Стоп».
+7. If there is no sound, check browser site sound permission and Windows output device / installed Russian speech voices.
+8. After voice verification, return to v0.3 durable memory. Microphone input is not included yet.
 
 ## Verification record
 
 - v0.2 API/core first boot: owner-reported verified on Windows on 2026-11-09; five tests passed, one deprecation warning.
-- v0.2.1 browser UI: implementation committed; local test and browser behavior not yet observed.
+- v0.2.1 browser UI: owner confirmed on 2026-11-09 that all interface checks work.
+- Voice output: implementation committed; tests and actual audio playback are not yet verified locally.
 
 ## Session handoff rule
 
